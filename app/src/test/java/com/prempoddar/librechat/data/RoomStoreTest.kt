@@ -14,9 +14,11 @@ import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
 /** Plain Room here: SQLCipher's native library can't load on the JVM. The mapping is what's tested. */
 @RunWith(RobolectricTestRunner::class)
+@Config(application = android.app.Application::class)
 class RoomStoreTest {
     private val db = Room.inMemoryDatabaseBuilder(ApplicationProvider.getApplicationContext(), ChatDatabase::class.java)
         .allowMainThreadQueries().build()

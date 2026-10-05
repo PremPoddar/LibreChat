@@ -67,26 +67,32 @@ class Messenger(
     val me: String get() = identity.peerId.value
     val myIdentity: Identity get() = identity
 
-    suspend fun start() = lock.withLock {
-        identity = store.identity() ?: Identity.generate().also { store.saveIdentity(it) }
-        router = Router(identity.peerId.value, ackVerifier = { true }, clock = clock)
-        rotatePrekeys()
-        ensureConversation(ConvIds.PUBLIC)
+    suspend fun start() = locked { }
+
+    /** Runs [block] under the lock, creating keys and state first if this is the first call. */
+    private suspend fun <T> locked(block: suspend () -> T): T = lock.withLock {
+        if (!::identity.isInitialized) {
+            identity = store.identity() ?: Identity.generate().also { store.saveIdentity(it) }
+            router = Router(identity.peerId.value, ackVerifier = { true }, clock = clock)
+            rotatePrekeys()
+            ensureConversation(ConvIds.PUBLIC)
+        }
+        block()
     }
 
     // Links
 
-    suspend fun onLinkUp(link: String, speed: LinkSpeed) = lock.withLock {
+    suspend fun onLinkUp(link: String, speed: LinkSpeed) = locked {
         router.linkUp(link, speed)
         // Introduce ourselves on the new link straight away.
         out(link, announcePacket().toBytes())
     }
 
-    suspend fun onLinkDown(link: String) = lock.withLock { router.linkDown(link) }
+    suspend fun onLinkDown(link: String) = locked { router.linkDown(link) }
 
     fun neighbours(): Map<String, List<String>> = router.neighbours()
 
-    suspend fun announce() = lock.withLock { emit(router.send(announcePacket())) }
+    suspend fun announce() = locked { emit(router.send(announcePacket())) }
 
     private suspend fun announcePacket(): Packet {
         val prekey = store.prekeys().maxBy { it.id }
@@ -105,12 +111,12 @@ class Messenger(
 
     // Incoming
 
-    suspend fun onPacket(link: String, bytes: ByteArray) = lock.withLock {
-        val packet = Packet.fromBytes(bytes) ?: return@withLock
+    suspend fun onPacket(link: String, bytes: ByteArray) = locked {
+        val packet = Packet.fromBytes(bytes) ?: return@locked
         var announce: Announce? = null
         if (packet.type == PacketType.ANNOUNCE) {
             // A forged announcement must not even be relayed or teach the router a neighbour.
-            announce = Announce.fromBytes(packet.payload)?.takeIf { it.verify(packet.sender) != null } ?: return@withLock
+            announce = Announce.fromBytes(packet.payload)?.takeIf { it.verify(packet.sender) != null } ?: return@locked
         }
         var acked = emptyList<String>()
         if (packet.type == PacketType.ACK) {
@@ -120,10 +126,10 @@ class Messenger(
         }
         val routed = router.receive(link, packet, acked)
         emit(routed.sends)
-        val p = routed.deliver ?: return@withLock
+        val p = routed.deliver ?: return@locked
         if (routed.duplicate) {
             sendAck(p)
-            return@withLock
+            return@locked
         }
         runCatching {
             when (p.type) {
@@ -326,7 +332,7 @@ class Messenger(
 
     // Outgoing
 
-    suspend fun sendText(conv: String, text: String, replyTo: String? = null): ChatMessage = lock.withLock {
+    suspend fun sendText(conv: String, text: String, replyTo: String? = null): ChatMessage = locked {
         val c = ensureConversation(conv)
         val id = newId()
         val now = clock()
@@ -351,7 +357,7 @@ class Messenger(
         durationMs: Long = 0,
         caption: String = "",
         replyTo: String? = null,
-    ): ChatMessage = lock.withLock {
+    ): ChatMessage = locked {
         require(ConvIds.kind(conv) != ConvKind.PUBLIC) { "media is not sent to the public chat" }
         val c = ensureConversation(conv)
         val id = newId()
@@ -378,27 +384,27 @@ class Messenger(
         store.message(id)!!
     }
 
-    suspend fun react(messageId: String, emoji: String) = lock.withLock {
-        val m = store.message(messageId)?.takeIf { !it.deleted } ?: return@withLock
+    suspend fun react(messageId: String, emoji: String) = locked {
+        val m = store.message(messageId)?.takeIf { !it.deleted } ?: return@locked
         val mineNow = m.reactions[emoji]?.contains(me) == true
         store.saveMessage(m.copy(reactions = toggle(m.reactions, emoji, me, !mineNow)))
         deliver(m.convId, Content.Reaction(messageId, emoji, remove = mineNow), null)
     }
 
-    suspend fun deleteForEveryone(messageId: String) = lock.withLock {
-        val m = store.message(messageId)?.takeIf { it.mine && !it.deleted } ?: return@withLock
+    suspend fun deleteForEveryone(messageId: String) = locked {
+        val m = store.message(messageId)?.takeIf { it.mine && !it.deleted } ?: return@locked
         tombstone(m)
         deliver(m.convId, Content.Delete(messageId), null)
     }
 
-    suspend fun deleteForMe(messageId: String) = lock.withLock {
-        val m = store.message(messageId) ?: return@withLock
+    suspend fun deleteForMe(messageId: String) = locked {
+        val m = store.message(messageId) ?: return@locked
         m.media?.path?.let(files::delete)
         store.deleteMessage(messageId)
     }
 
     /** The conversation is on screen: clear unread and, for accepted DMs, tell them it was read. */
-    suspend fun markRead(conv: String) = lock.withLock {
+    suspend fun markRead(conv: String) = locked {
         val unread = store.unreadIncoming(conv)
         unread.forEach { store.saveMessage(it.copy(status = MsgStatus.SEEN)) }
         store.conversation(conv)?.let { if (it.unread != 0) store.saveConversation(it.copy(unread = 0)) }
@@ -408,43 +414,48 @@ class Messenger(
         }
     }
 
-    suspend fun accept(peer: String) = lock.withLock {
-        val p = store.person(peer) ?: return@withLock
+    suspend fun accept(peer: String) = locked {
+        val p = store.person(peer) ?: return@locked
         store.savePerson(p.copy(state = PersonState.ACCEPTED))
         store.conversation(ConvIds.direct(peer))?.let { store.saveConversation(it.copy(request = false)) }
         sendDirect(peer, Content.Accept, null)
     }
 
-    suspend fun block(peer: String) = lock.withLock {
-        val p = store.person(peer) ?: return@withLock
+    suspend fun block(peer: String) = locked {
+        val p = store.person(peer) ?: return@locked
         store.savePerson(p.copy(state = PersonState.BLOCKED))
         store.conversation(ConvIds.direct(peer))?.let { store.saveConversation(it.copy(request = false)) }
     }
 
-    suspend fun unblock(peer: String) = lock.withLock {
-        val p = store.person(peer) ?: return@withLock
+    suspend fun unblock(peer: String) = locked {
+        val p = store.person(peer) ?: return@locked
         store.savePerson(p.copy(state = PersonState.ACCEPTED))
     }
 
     /** Opens (or creates) a direct conversation. */
-    suspend fun openDirect(peer: String): Conversation = lock.withLock { ensureConversation(ConvIds.direct(peer)) }
+    suspend fun openDirect(peer: String): Conversation = locked { ensureConversation(ConvIds.direct(peer)) }
 
     enum class VerifyResult { VERIFIED, ADDED, MISMATCH }
 
     /** A scanned contact card: matches a known person, adds a new verified contact, or doesn't match. */
-    suspend fun verify(scanned: PublicIdentity, name: String): VerifyResult = lock.withLock {
+    suspend fun verify(scanned: PublicIdentity, name: String): VerifyResult = locked {
         val peer = scanned.peerId.value
         val existing = store.person(peer)
         if (existing == null) {
             store.savePerson(Person(peer, scanned.toBytes(), name.ifBlank { "Unknown" }, state = PersonState.ACCEPTED, verified = true))
-            return@withLock VerifyResult.ADDED
+            return@locked VerifyResult.ADDED
         }
-        if (!existing.identity.contentEquals(scanned.toBytes())) return@withLock VerifyResult.MISMATCH
+        if (!existing.identity.contentEquals(scanned.toBytes())) return@locked VerifyResult.MISMATCH
         store.savePerson(existing.copy(verified = true, state = if (existing.state == PersonState.BLOCKED) existing.state else PersonState.ACCEPTED))
         VerifyResult.VERIFIED
     }
 
-    suspend fun setTimer(conv: String, seconds: Long) = lock.withLock {
+    /** After comparing safety numbers by reading them out. */
+    suspend fun setVerified(peer: String, verified: Boolean) = locked {
+        store.person(peer)?.let { store.savePerson(it.copy(verified = verified)) }
+    }
+
+    suspend fun setTimer(conv: String, seconds: Long) = locked {
         require(seconds in TIMER_CHOICES)
         val c = ensureConversation(conv)
         store.saveConversation(c.copy(timerSeconds = seconds))
@@ -454,7 +465,7 @@ class Messenger(
 
     // Groups
 
-    suspend fun createGroup(name: String, members: List<String>): String = lock.withLock {
+    suspend fun createGroup(name: String, members: List<String>): String = locked {
         val gid = Random.bytes(16).hex()
         val g = Group(gid, name.trim().take(40), me, (listOf(me) + members).distinct(), version = 1)
         store.saveGroup(g)
@@ -464,8 +475,8 @@ class Messenger(
         gid
     }
 
-    suspend fun updateGroup(gid: String, name: String? = null, add: List<String> = emptyList(), remove: List<String> = emptyList()) = lock.withLock {
-        val g = store.group(gid)?.takeIf { it.active && it.admin == me } ?: return@withLock
+    suspend fun updateGroup(gid: String, name: String? = null, add: List<String> = emptyList(), remove: List<String> = emptyList()) = locked {
+        val g = store.group(gid)?.takeIf { it.active && it.admin == me } ?: return@locked
         val members = (g.members + add).distinct() - remove.toSet()
         val next = g.copy(name = name?.trim()?.take(40) ?: g.name, members = members.distinct(), version = g.version + 1)
         store.saveGroup(next)
@@ -478,8 +489,8 @@ class Messenger(
         if (name != null && name != g.name) system(ConvIds.group(gid), "You renamed the group to ${next.name}")
     }
 
-    suspend fun leaveGroup(gid: String) = lock.withLock {
-        val g = store.group(gid)?.takeIf { it.active } ?: return@withLock
+    suspend fun leaveGroup(gid: String) = locked {
+        val g = store.group(gid)?.takeIf { it.active } ?: return@locked
         g.members.filter { it != me }.forEach { sendDirect(it, Content.GroupLeave(Bytes.unhex(gid)), null) }
         store.saveGroup(g.copy(active = false, members = g.members - me))
         store.saveOwnSenderKey(gid, null)
@@ -679,7 +690,7 @@ class Messenger(
     // Upkeep
 
     /** Call every ~30 s: retries, expiry, prekey rotation, asking for missing media. */
-    suspend fun tick() = lock.withLock {
+    suspend fun tick() = locked {
         val now = clock()
         router.tick()
         store.outbox().forEach { e ->
