@@ -123,4 +123,14 @@ class RouterTest {
         assertThat(again.duplicate).isTrue()
         assertThat(again.deliver).isEqualTo(p)
     }
+
+    @Test fun retriedDirectMessagesAreRelayedAgainButNotTooOften() {
+        router.linkUp("L1", LinkSpeed.BLE); router.linkUp("L2", LinkSpeed.BLE)
+        val p = pkt(PacketType.DIRECT, to = "cccccccccccccccc")
+        assertThat(router.receive("L1", p).sends).isNotEmpty()
+        assertThat(router.receive("L1", p).sends).isEmpty()
+        now += Router.REFORWARD_MS + 1
+        assertThat(router.receive("L1", p).sends.map { it.link }).containsExactly("L2")
+        assertThat(router.receive("L1", p).sends).isEmpty()
+    }
 }

@@ -4,11 +4,11 @@ import java.nio.ByteBuffer
 
 /**
  * Bluetooth writes are a few hundred bytes at most, so packets travel as numbered frames:
- * `[frame id u16][index u8][count u8] + bytes`.
+ * `[frame id u16][index u16][count u16] + bytes`.
  */
 object Fragmenter {
-    const val HEADER = 4
-    const val MAX_FRAMES = 255
+    const val HEADER = 6
+    const val MAX_FRAMES = 65_535
 
     fun split(frameId: Int, data: ByteArray, maxFrame: Int): List<ByteArray> {
         val body = maxFrame - HEADER
@@ -19,7 +19,7 @@ object Fragmenter {
             val from = i * body
             val part = data.copyOfRange(from, minOf(data.size, from + body))
             ByteBuffer.allocate(HEADER + part.size)
-                .putShort(frameId.toShort()).put(i.toByte()).put(count.toByte()).put(part).array()
+                .putShort(frameId.toShort()).putShort(i.toShort()).putShort(count.toShort()).put(part).array()
         }
     }
 }
@@ -35,8 +35,8 @@ class Reassembler(private val timeoutMs: Long = 30_000, private val clock: () ->
         if (frame.size < Fragmenter.HEADER) return null
         val b = ByteBuffer.wrap(frame)
         val id = b.short.toInt() and 0xFFFF
-        val index = b.get().toInt() and 0xFF
-        val count = b.get().toInt() and 0xFF
+        val index = b.short.toInt() and 0xFFFF
+        val count = b.short.toInt() and 0xFFFF
         if (count == 0 || index >= count) return null
         val now = clock()
         partials.entries.removeIf { now - it.value.lastSeen > timeoutMs }

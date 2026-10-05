@@ -66,9 +66,18 @@ class Router(
             if (!known) sends += replayTo(link, packet.sender)
         }
 
-        if (seen.containsKey(packet.key)) {
+        val seenAt = seen[packet.key]
+        if (seenAt != null) {
             // The sender is retrying because our acknowledgement got lost.
             val again = packet.type == PacketType.DIRECT && packet.recipient == me
+            // A retry of someone else's direct message: pass it on again, but rarely enough that
+            // copies circling the mesh die out.
+            val now = clock()
+            if (packet.type == PacketType.DIRECT && !again && packet.ttl > 1 && now - seenAt > REFORWARD_MS) {
+                seen[packet.key] = now
+                val next = packet.copy(ttl = packet.ttl - 1)
+                sends += targets(next, from = link).map { Send(it, next) }
+            }
             return Routed(if (again) packet else null, sends, duplicate = again)
         }
         seen[packet.key] = clock()
@@ -143,6 +152,7 @@ class Router(
 
     companion object {
         const val SEEN_MAX = 5_000
+        const val REFORWARD_MS = 20_000L
         const val STORE_FOR_MS = 24L * 60 * 60 * 1000
         const val STORE_MAX_PACKETS = 600
         const val STORE_MAX_BYTES = 4L * 1024 * 1024

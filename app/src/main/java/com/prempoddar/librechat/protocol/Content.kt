@@ -65,6 +65,10 @@ sealed class Content {
     @Serializable @SerialName("sender_key")
     data class SenderKey(val distribution: ByteArray) : Content()
 
+    /** Receiver asks for media pieces that never arrived. */
+    @Serializable @SerialName("missing")
+    data class Missing(val transferId: String, val indexes: List<Int>) : Content()
+
     @Serializable @SerialName("timer")
     data class Timer(val seconds: Long) : Content()
 
