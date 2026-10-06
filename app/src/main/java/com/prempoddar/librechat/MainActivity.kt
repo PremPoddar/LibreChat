@@ -4,13 +4,11 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.SystemClock
 import android.view.WindowManager
-import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
 import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
 import androidx.biometric.BiometricPrompt
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -21,7 +19,6 @@ import com.prempoddar.librechat.data.AppSettings
 import com.prempoddar.librechat.ui.LibreNavHost
 import com.prempoddar.librechat.ui.LockScreen
 import com.prempoddar.librechat.ui.theme.LibreTheme
-import com.prempoddar.librechat.ui.theme.isDark
 
 class MainActivity : FragmentActivity() {
     private val locked = mutableStateOf(true)
@@ -36,19 +33,12 @@ class MainActivity : FragmentActivity() {
         setContent {
             val settings: AppSettings? by AppGraph.settings.settings.collectAsStateWithLifecycle(null)
             val s = settings ?: return@setContent
-            val dark = isDark(s.theme)
-            DisposableEffect(dark) {
-                val style = if (dark) SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
-                else SystemBarStyle.light(android.graphics.Color.TRANSPARENT, android.graphics.Color.TRANSPARENT)
-                enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
-                onDispose { }
-            }
             // With the app lock on, LibreChat also stays out of screenshots and the recents preview.
             LaunchedEffect(s.appLock) {
                 if (s.appLock) window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
                 else window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
             }
-            LibreTheme(s.theme) {
+            LibreTheme(s.appearance) {
                 if (s.appLock && locked.value) {
                     LockScreen(onUnlock = ::unlock)
                     LaunchedEffect(Unit) { unlock() }

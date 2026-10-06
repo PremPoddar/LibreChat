@@ -1,5 +1,6 @@
 package com.prempoddar.librechat.ui.components
 
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -106,10 +107,10 @@ fun initials(name: String): String {
 fun Ticks(status: MsgStatus, modifier: Modifier = Modifier) {
     val s = LocalSignal.current
     val (icon, tint, label) = when (status) {
-        MsgStatus.SENDING -> Triple(Icons.Rounded.Schedule, s.faint, "Waiting for the mesh")
-        MsgStatus.SENT -> Triple(Icons.Rounded.Done, s.faint, "Sent")
-        MsgStatus.DELIVERED -> Triple(Icons.Rounded.DoneAll, s.faint, "Delivered")
-        MsgStatus.READ -> Triple(Icons.Rounded.DoneAll, s.phosphor, "Read")
+        MsgStatus.SENDING -> Triple(Icons.Rounded.Schedule, LocalContentColor.current.copy(alpha = 0.55f), "Waiting for the mesh")
+        MsgStatus.SENT -> Triple(Icons.Rounded.Done, LocalContentColor.current.copy(alpha = 0.55f), "Sent")
+        MsgStatus.DELIVERED -> Triple(Icons.Rounded.DoneAll, LocalContentColor.current.copy(alpha = 0.55f), "Delivered")
+        MsgStatus.READ -> Triple(Icons.Rounded.DoneAll, LocalContentColor.current, "Read")
         MsgStatus.FAILED -> Triple(Icons.Rounded.ErrorOutline, s.danger, "Not delivered")
         else -> return
     }

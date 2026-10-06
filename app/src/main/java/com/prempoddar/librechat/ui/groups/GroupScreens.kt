@@ -1,5 +1,8 @@
 package com.prempoddar.librechat.ui.groups
 
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.foundation.text.KeyboardOptions
+import com.prempoddar.librechat.ui.design.PillTextField
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -27,7 +30,6 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -87,9 +89,9 @@ fun NewGroupScreen(onBack: () -> Unit, onCreated: (String) -> Unit) {
             IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back") }
             Text("New group", style = MaterialTheme.typography.titleLarge)
         }
-        OutlinedTextField(
-            name, { name = it.take(40) }, label = { Text("Group name") }, singleLine = true,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+        PillTextField(
+            name, { name = it.take(40) }, "Group name", Modifier.padding(horizontal = 16.dp),
+            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
         )
         SectionLabel("Members · ${picked.size}")
         LazyColumn(Modifier.weight(1f)) {
@@ -187,7 +189,7 @@ fun GroupInfoScreen(groupId: String, onBack: () -> Unit, onOpenPerson: (String) 
         AlertDialog(
             onDismissRequest = { renaming = false },
             title = { Text("Rename group") },
-            text = { OutlinedTextField(value, { value = it.take(40) }, singleLine = true) },
+            text = { PillTextField(value, { value = it.take(40) }, "Group name") },
             confirmButton = { TextButton(enabled = value.isNotBlank(), onClick = { renaming = false; scope.launch { AppGraph.messenger.updateGroup(g.id, name = value) } }) { Text("Save") } },
             dismissButton = { TextButton(onClick = { renaming = false }) { Text("Cancel") } },
         )

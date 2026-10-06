@@ -1,5 +1,8 @@
 package com.prempoddar.librechat.ui.chat
 
+import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.runtime.CompositionLocalProvider
 import android.Manifest
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -344,7 +347,7 @@ private fun sameDay(a: Long, b: Long) = a / 86_400_000L == b / 86_400_000L
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun Bubble(
+internal fun Bubble(
     m: ChatMessage, first: Boolean, kind: ConvKind, names: Map<String, String>, replied: ChatMessage?,
     onLongPress: (ChatMessage) -> Unit, onSwipeReply: (ChatMessage) -> Unit,
 ) {
@@ -369,15 +372,18 @@ private fun Bubble(
                 .combinedClickable(onClick = {}, onLongClick = { if (!m.deleted) onLongPress(m) }, onDoubleClick = { if (!m.deleted) onSwipeReply(m) })
                 .padding(horizontal = 12.dp, vertical = 8.dp),
         ) {
+          val onBubble = if (m.deleted) MaterialTheme.colorScheme.onSurfaceVariant else if (m.mine) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+          val meta = onBubble.copy(alpha = 0.7f)
+          CompositionLocalProvider(LocalContentColor provides onBubble) {
             if (m.deleted) {
-                Text("Message deleted", style = MaterialTheme.typography.bodyMedium, color = s.faint)
+                Text("Message deleted", style = MaterialTheme.typography.bodyMedium, color = meta)
             } else {
                 replied?.let { r ->
                     Column(
-                        Modifier.padding(bottom = 6.dp).clip(MaterialTheme.shapes.small).background(MaterialTheme.colorScheme.background.copy(alpha = 0.5f))
+                        Modifier.padding(bottom = 6.dp).clip(MaterialTheme.shapes.small).background(onBubble.copy(alpha = 0.08f))
                             .padding(horizontal = 8.dp, vertical = 4.dp),
                     ) {
-                        Text(if (r.mine) "You" else names[r.sender] ?: "Someone", style = MaterialTheme.typography.labelMedium, color = s.phosphor)
+                        Text(if (r.mine) "You" else names[r.sender] ?: "Someone", style = MaterialTheme.typography.labelMedium, color = if (m.mine) onBubble else s.phosphor)
                         Text(
                             when { r.deleted -> "Message deleted"; r.kind == MsgKind.PHOTO -> "📷 Photo"; r.kind == MsgKind.VOICE -> "🎤 Voice note"; else -> r.text },
                             style = MaterialTheme.typography.bodySmall, maxLines = 2, overflow = TextOverflow.Ellipsis,
@@ -392,10 +398,11 @@ private fun Bubble(
                 if (m.text.isNotEmpty()) Text(m.text, style = MaterialTheme.typography.bodyLarge)
             }
             Row(Modifier.align(Alignment.End).padding(top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
-                if (m.expiresAt > 0) Icon(Icons.Rounded.Timer, "Disappears", Modifier.padding(end = 4.dp).size(11.dp), tint = s.faint)
-                Text(clock(m.at), style = MonoSmall, color = s.faint)
+                if (m.expiresAt > 0) Icon(Icons.Rounded.Timer, "Disappears", Modifier.padding(end = 4.dp).size(11.dp), tint = meta)
+                Text(clock(m.at), style = MonoSmall, color = meta)
                 if (m.mine && !m.deleted) Ticks(m.status, Modifier.padding(start = 4.dp))
             }
+          }
         }
         if (m.reactions.isNotEmpty()) {
             Row(Modifier.padding(top = 2.dp, start = 6.dp, end = 6.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -403,7 +410,7 @@ private fun Bubble(
                 m.reactions.forEach { (emoji, who) ->
                     val mine = runCatching { AppGraph.messenger.me in who }.getOrDefault(false)
                     Row(
-                        Modifier.clip(CircleShape).background(if (mine) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface)
+                        Modifier.clip(CircleShape).background(if (mine) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest)
                             .clickable { scope.launch { AppGraph.messenger.react(m.id, emoji) } }.padding(horizontal = 8.dp, vertical = 2.dp),
                     ) {
                         Text(emoji)
@@ -579,8 +586,8 @@ private fun Composer(convId: String, kind: ConvKind, replyTo: ChatMessage?, name
                     modifier = Modifier.weight(1f).heightIn(max = 160.dp),
                     shape = RoundedCornerShape(22.dp),
                     colors = TextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant, unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        focusedIndicatorColor = MaterialTheme.colorScheme.surfaceVariant, unfocusedIndicatorColor = MaterialTheme.colorScheme.surfaceVariant,
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest, unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent, disabledIndicatorColor = Color.Transparent,
                     ),
                 )
             }
@@ -595,8 +602,8 @@ private fun Composer(convId: String, kind: ConvKind, replyTo: ChatMessage?, name
                         onClearReply()
                         scope.launch { AppGraph.messenger.sendText(convId, t, reply) }
                     },
-                    modifier = Modifier.size(52.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer),
-                ) { Icon(Icons.AutoMirrored.Rounded.Send, "Send", tint = s.phosphor) }
+                    modifier = Modifier.size(52.dp).clip(CircleShape).background(if (text.isNotBlank()) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHighest),
+                ) { Icon(Icons.AutoMirrored.Rounded.Send, "Send", tint = if (text.isNotBlank()) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant) }
             } else {
                 // Hold to record a voice note; lift to send, drag off to cancel.
                 Box(
@@ -626,7 +633,7 @@ private fun Composer(convId: String, kind: ConvKind, replyTo: ChatMessage?, name
                             })
                         },
                     contentAlignment = Alignment.Center,
-                ) { Icon(Icons.Rounded.Mic, "Hold to record a voice note", tint = if (recording) MaterialTheme.colorScheme.background else s.phosphor) }
+                ) { Icon(Icons.Rounded.Mic, "Hold to record a voice note", tint = if (recording) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.onPrimaryContainer) }
             }
         }
     }

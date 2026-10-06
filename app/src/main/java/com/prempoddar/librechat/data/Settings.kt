@@ -1,5 +1,7 @@
 package com.prempoddar.librechat.data
 
+import androidx.datastore.preferences.core.intPreferencesKey
+import com.prempoddar.librechat.ui.design.Appearance
 import android.content.Context
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
@@ -11,11 +13,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
-enum class ThemeMode { SYSTEM, LIGHT, DARK }
-
 data class AppSettings(
     val name: String = "",
-    val theme: ThemeMode = ThemeMode.SYSTEM,
+    val appearance: Appearance = Appearance(),
     val stayInMesh: Boolean = true,
     val appLock: Boolean = false,
     val notifications: Boolean = true,
@@ -29,6 +29,9 @@ class SettingsRepository(private val context: Context) {
     private object K {
         val name = stringPreferencesKey("name")
         val theme = stringPreferencesKey("theme")
+        val dynamic = booleanPreferencesKey("dynamic")
+        val accent = intPreferencesKey("accent")
+        val black = booleanPreferencesKey("pure_black")
         val mesh = booleanPreferencesKey("mesh")
         val lock = booleanPreferencesKey("lock")
         val notify = booleanPreferencesKey("notify")
@@ -44,7 +47,10 @@ class SettingsRepository(private val context: Context) {
         context.dataStore.edit { p ->
             val n = transform(p.toSettings())
             p[K.name] = n.name
-            p[K.theme] = n.theme.name
+            p[K.theme] = n.appearance.mode.name
+            p[K.dynamic] = n.appearance.dynamic
+            p[K.black] = n.appearance.pureBlack
+            n.appearance.accent?.let { p[K.accent] = it } ?: p.remove(K.accent)
             p[K.mesh] = n.stayInMesh
             p[K.lock] = n.appLock
             p[K.notify] = n.notifications
@@ -57,7 +63,12 @@ class SettingsRepository(private val context: Context) {
         val d = AppSettings()
         return AppSettings(
             name = this[K.name] ?: d.name,
-            theme = this[K.theme]?.let { runCatching { ThemeMode.valueOf(it) }.getOrNull() } ?: d.theme,
+            appearance = Appearance(
+                mode = this[K.theme]?.let { runCatching { Appearance.Mode.valueOf(it) }.getOrNull() } ?: Appearance.Mode.SYSTEM,
+                dynamic = this[K.dynamic] ?: false,
+                accent = this[K.accent],
+                pureBlack = this[K.black] ?: false,
+            ),
             stayInMesh = this[K.mesh] ?: d.stayInMesh,
             appLock = this[K.lock] ?: d.appLock,
             notifications = this[K.notify] ?: d.notifications,

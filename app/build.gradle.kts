@@ -62,6 +62,7 @@ ksp {
 }
 
 dependencies {
+    implementation(libs.material.color.utilities)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.service)
@@ -92,6 +93,9 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
 
     testImplementation(libs.junit)
+    testImplementation(platform(libs.androidx.compose.bom))
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
     testImplementation(libs.truth)
     testImplementation(libs.robolectric)
     testImplementation(libs.kotlinx.coroutines.test)

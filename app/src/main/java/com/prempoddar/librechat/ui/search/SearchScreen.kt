@@ -1,5 +1,8 @@
 package com.prempoddar.librechat.ui.search
 
+import androidx.compose.ui.Alignment
+import androidx.compose.material.icons.rounded.Search
+import com.prempoddar.librechat.ui.design.PillTextField
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -18,8 +21,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -48,12 +49,11 @@ fun SearchScreen(onBack: () -> Unit, onOpenChat: (String) -> Unit) {
     LaunchedEffect(Unit) { focus.requestFocus() }
     val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(top = top)) {
-        Row {
-            IconButton(onClick = onBack, modifier = Modifier.padding(top = 4.dp)) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back") }
-            TextField(
-                q, { q = it }, placeholder = { Text("Search messages") }, singleLine = true,
-                modifier = Modifier.weight(1f).padding(end = 12.dp).focusRequester(focus),
-                colors = TextFieldDefaults.colors(focusedContainerColor = MaterialTheme.colorScheme.background, unfocusedContainerColor = MaterialTheme.colorScheme.background),
+        Row(Modifier.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back") }
+            PillTextField(
+                q, { q = it }, "Search messages", Modifier.weight(1f).padding(end = 12.dp).focusRequester(focus),
+                leading = Icons.Rounded.Search,
             )
         }
         LazyColumn {

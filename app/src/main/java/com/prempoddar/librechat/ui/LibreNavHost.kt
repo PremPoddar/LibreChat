@@ -1,5 +1,18 @@
 package com.prempoddar.librechat.ui
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.prempoddar.librechat.AppGraph
+import com.prempoddar.librechat.R
+import com.prempoddar.librechat.data.AppSettings
+import com.prempoddar.librechat.ui.design.AboutScreen
+import com.prempoddar.librechat.ui.design.AppearanceScreen
+import com.prempoddar.librechat.ui.design.Credit
+import com.prempoddar.librechat.ui.design.LayeredIcon
+import com.prempoddar.librechat.ui.theme.LIBRE_BRAND
+import kotlinx.coroutines.launch
+
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
@@ -43,6 +56,7 @@ fun LibreNavHost(onboarded: Boolean, openRequest: String?, onOpened: () -> Unit)
                 onOpenChat = chat, onOpenPerson = person,
                 onNewGroup = { nav.navigate("newgroup") }, onSearch = { nav.navigate("search") },
                 onBlocked = { nav.navigate("blocked") }, onSecurity = { nav.navigate("security") },
+                onAppearance = { nav.navigate("appearance") }, onAbout = { nav.navigate("about") },
             )
         }
         composable("chat/{id}") { e ->
@@ -57,5 +71,24 @@ fun LibreNavHost(onboarded: Boolean, openRequest: String?, onOpened: () -> Unit)
         composable("search") { SearchScreen(onBack = { nav.popBackStack() }, onOpenChat = chat) }
         composable("blocked") { BlockedScreen(onBack = { nav.popBackStack() }) }
         composable("security") { SecurityScreen(onBack = { nav.popBackStack() }) }
+        composable("appearance") {
+            val settings by AppGraph.settings.settings.collectAsStateWithLifecycle(AppSettings())
+            val scope = rememberCoroutineScope()
+            AppearanceScreen(settings.appearance, LIBRE_BRAND, onChange = { a -> scope.launch { AppGraph.settings.update { it.copy(appearance = a) } } }, onBack = { nav.popBackStack() })
+        }
+        composable("about") {
+            AboutScreen(
+                "LibreChat", "Private chat that hops phone to phone, with no internet.",
+                icon = { LayeredIcon(R.drawable.ic_launcher_background, R.drawable.ic_launcher_foreground) },
+                credits = listOf(
+                    Credit("Jetpack Compose", "Apache 2.0"),
+                    Credit("SQLCipher", "BSD-style"),
+                    Credit("Bouncy Castle", "MIT"),
+                    Credit("ZXing Android Embedded", "Apache 2.0"),
+                    Credit("Material Color Utilities", "Apache 2.0"),
+                ),
+                onBack = { nav.popBackStack() },
+            )
+        }
     }
 }

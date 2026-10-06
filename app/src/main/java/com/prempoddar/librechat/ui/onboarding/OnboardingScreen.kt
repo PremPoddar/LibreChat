@@ -1,5 +1,6 @@
 package com.prempoddar.librechat.ui.onboarding
 
+import com.prempoddar.librechat.ui.design.PillTextField
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
@@ -26,7 +27,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -119,11 +119,10 @@ private fun NameStep(name: String, onName: (String) -> Unit, onNext: () -> Unit)
         "STEP 1 OF 3", "What should people nearby see?",
         "Your name goes out with your announcements. Your keys are created on this phone and never leave it.",
         content = {
-            OutlinedTextField(
-                value = name, onValueChange = { onName(it.take(32)) }, singleLine = true, label = { Text("Your name") },
+            PillTextField(
+                name, { onName(it.take(32)) }, "Your name",
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words, imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = { if (ok) onNext() }),
-                modifier = Modifier.fillMaxWidth(),
             )
         },
         action = "Continue", enabled = ok, onAction = onNext,
