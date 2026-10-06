@@ -81,6 +81,8 @@ dependencies {
     implementation(libs.sqlcipher)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.biometric)
+    // Biometric pulls in an old Fragment that rejects Activity Result request codes; keep it current.
+    implementation(libs.androidx.fragment)
     implementation(libs.androidx.exifinterface)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.serialization.protobuf)
