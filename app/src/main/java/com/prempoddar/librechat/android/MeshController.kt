@@ -1,5 +1,7 @@
 package com.prempoddar.librechat.android
 
+import android.util.Log
+import kotlinx.coroutines.CoroutineExceptionHandler
 import android.content.Context
 import com.prempoddar.librechat.engine.Messenger
 import com.prempoddar.librechat.mesh.LinkSpeed
@@ -25,6 +27,8 @@ data class MeshStatus(
     val missingPermission: Boolean = false,
     val wifiAware: Boolean = false,
     val neighbours: Map<String, Neighbour> = emptyMap(),
+    /** Why the mesh couldn't start, if it couldn't. */
+    val failed: String? = null,
 )
 
 /**
@@ -32,7 +36,8 @@ data class MeshStatus(
  * the transports, feeds packets to the messenger in arrival order, and announces/ticks on a timer.
  */
 class MeshController(private val context: Context, val messenger: Messenger) {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    // A radio that refuses to start must never take the app down with it.
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default + CoroutineExceptionHandler { _, e -> Log.w("LibreChat", "mesh", e) })
     private val holders = mutableSetOf<String>()
     private val startLock = Mutex()
     private var started = false
@@ -53,6 +58,16 @@ class MeshController(private val context: Context, val messenger: Messenger) {
         }
     }
 
+    private suspend fun safeStart() {
+        try {
+            startMesh()
+        } catch (e: Exception) {
+            Log.w("LibreChat", "mesh didn't start", e)
+            runCatching { stopMesh() }
+            _status.value = MeshStatus(failed = e.message ?: "The radios couldn't start")
+        }
+    }
+
     /** Makes sure keys exist; safe to call more than once. */
     suspend fun ensureStarted() = startLock.withLock {
         if (!started) {
@@ -63,7 +78,7 @@ class MeshController(private val context: Context, val messenger: Messenger) {
 
     @Synchronized fun acquire(holder: String) {
         holders += holder
-        if (holders.size == 1) scope.launch { startMesh() }
+        if (holders.size == 1) scope.launch { safeStart() }
     }
 
     @Synchronized fun release(holder: String) {
@@ -74,7 +89,7 @@ class MeshController(private val context: Context, val messenger: Messenger) {
     fun restart() {
         scope.launch {
             stopMesh()
-            if (synchronized(this@MeshController) { holders.isNotEmpty() }) startMesh()
+            if (synchronized(this@MeshController) { holders.isNotEmpty() }) safeStart()
         }
     }
 
@@ -111,8 +126,8 @@ class MeshController(private val context: Context, val messenger: Messenger) {
 
     private suspend fun stopMesh() {
         loops?.cancel(); loops = null
-        ble?.stop(); ble = null
-        aware?.stop(); aware = null
+        runCatching { ble?.stop() }; ble = null
+        runCatching { aware?.stop() }; aware = null
         _status.value = MeshStatus()
     }
 

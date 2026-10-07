@@ -43,6 +43,7 @@ class MeshService : LifecycleService() {
     }
 
     private fun promote(nearby: Int) {
+        AppGraph.notifier // creates the channels if nothing has yet
         val open = PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
         val leave = PendingIntent.getService(this, 1, Intent(this, MeshService::class.java).setAction(ACTION_LEAVE), PendingIntent.FLAG_IMMUTABLE)
         val text = when (nearby) {

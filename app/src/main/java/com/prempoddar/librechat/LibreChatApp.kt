@@ -1,5 +1,6 @@
 package com.prempoddar.librechat
 
+import kotlinx.coroutines.CoroutineExceptionHandler
 import android.app.Application
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
@@ -14,13 +15,15 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 
 class LibreChatApp : Application() {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default + CoroutineExceptionHandler { _, e -> android.util.Log.w("LibreChat", "background", e) })
     @Volatile var inForeground = false
         private set
 
     override fun onCreate() {
         super.onCreate()
         AppGraph.init(this)
+        // Notification channels must exist before the background service posts its notification.
+        AppGraph.notifier
         AppGraph.files.cleanUp()
 
         // The mesh runs while LibreChat is on screen…

@@ -34,12 +34,13 @@ fun MeshChip(modifier: Modifier = Modifier) {
         status.missingPermission -> Triple(s.amber, "NEARBY PERMISSION NEEDED", {
             context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, android.net.Uri.fromParts("package", context.packageName, null)))
         })
+        status.failed != null -> Triple(s.danger, "MESH DIDN'T START · TAP TO RETRY", {})
         !status.running -> Triple(s.faint, "MESH OFF", null)
         status.neighbours.isEmpty() -> Triple(s.amber, "SEARCHING", null)
         else -> Triple(s.phosphor, "${status.neighbours.size} LINKED${if (status.neighbours.values.any { it.wifi }) " · WI-FI" else ""}", null)
     }
     Row(
-        modifier.clip(CircleShape).background(MaterialTheme.colorScheme.surface)
+        modifier.clip(CircleShape).background(MaterialTheme.colorScheme.surfaceContainerHigh)
             .then(if (fix != null) Modifier.clickable { fix(); AppGraph.mesh.restart() } else Modifier)
             .padding(horizontal = 10.dp, vertical = 5.dp),
         verticalAlignment = Alignment.CenterVertically,
