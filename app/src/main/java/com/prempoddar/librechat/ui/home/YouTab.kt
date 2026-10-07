@@ -126,12 +126,15 @@ fun YouTab(onBlocked: () -> Unit, onSecurity: () -> Unit, onAppearance: () -> Un
                 Icons.Rounded.Lock, settings.appLock, enabled = canLock,
             ) { on -> update { it.copy(appLock = on) } }
             var timerMenu by remember { mutableStateOf(false) }
-            Box {
+            Box(Modifier.fillMaxWidth()) {
                 SettingsRow("Disappearing messages", "${ConvTimers.label(settings.defaultTimer)} for new chats you start", Icons.Rounded.Timer, onClick = { timerMenu = true }) { Chevron() }
+                // Anchored at the row's right edge, next to the arrow that opens it.
+                Box(Modifier.align(Alignment.TopEnd).padding(end = 16.dp)) {
                 DropdownMenu(timerMenu, onDismissRequest = { timerMenu = false }) {
                     ConvTimers.choices.forEach { t ->
                         DropdownMenuItem(text = { Text(ConvTimers.label(t)) }, onClick = { timerMenu = false; update { it.copy(defaultTimer = t) } })
                     }
+                }
                 }
             }
             SettingsRow("Blocked people", "They can't message you; you still relay for them", Icons.Rounded.Block, onClick = onBlocked) { Chevron() }
