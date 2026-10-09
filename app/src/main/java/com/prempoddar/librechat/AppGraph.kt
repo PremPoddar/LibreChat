@@ -30,4 +30,7 @@ object AppGraph {
         controller
     }
     val messenger: Messenger get() = mesh.messenger
+
+    /** Work that must finish even if the screen that started it closes, like sending a photo. */
+    val work = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Default)
 }

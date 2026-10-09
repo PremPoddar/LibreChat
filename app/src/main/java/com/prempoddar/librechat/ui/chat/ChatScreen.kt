@@ -1,5 +1,8 @@
 package com.prempoddar.librechat.ui.chat
 
+import androidx.compose.material.icons.rounded.PhotoCamera
+import androidx.compose.material.icons.rounded.PhotoLibrary
+import android.net.Uri
 import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.CompositionLocalProvider
@@ -532,20 +535,35 @@ private fun Composer(convId: String, kind: ConvKind, replyTo: ChatMessage?, name
     val micPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) Toast.makeText(context, "Hold the mic to record", Toast.LENGTH_SHORT).show()
     }
-    val pickPhoto = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        uri ?: return@rememberLauncherForActivityResult
-        scope.launch {
-            val photo = withContext(Dispatchers.IO) { com.prempoddar.librechat.ui.media.Photos.prepare(context, uri) }
-            if (photo == null) {
-                Toast.makeText(context, "That photo couldn't be opened", Toast.LENGTH_SHORT).show()
-                return@launch
+    // Preparing and sending carry on in the background even if this chat is closed meanwhile.
+    fun sendPhoto(uri: Uri) {
+        val caption = text.trim()
+        text = ""
+        val reply = replyTo?.id
+        onClearReply()
+        AppGraph.work.launch {
+            val error = runCatching {
+                val photo = com.prempoddar.librechat.ui.media.Photos.prepare(context, uri) ?: error("That photo couldn't be opened")
+                AppGraph.messenger.sendMedia(convId, MediaKind.PHOTO, "image/jpeg", photo.bytes, photo.thumbnail, photo.width, photo.height, caption = caption, replyTo = reply)
+            }.exceptionOrNull()
+            if (error != null) withContext(Dispatchers.Main) {
+                Toast.makeText(context, error.message?.takeIf { it.length < 80 } ?: "The photo couldn't be sent", Toast.LENGTH_LONG).show()
             }
-            val caption = text.trim()
-            text = ""
-            AppGraph.messenger.sendMedia(convId, MediaKind.PHOTO, "image/jpeg", photo.bytes, photo.thumbnail, photo.width, photo.height, caption = caption, replyTo = replyTo?.id)
-            onClearReply()
         }
     }
+    val pickPhoto = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri -> uri?.let(::sendPhoto) }
+    var shot by rememberSaveable { mutableStateOf<Uri?>(null) }
+    val takePhoto = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok -> shot?.let { if (ok) sendPhoto(it) }; shot = null }
+    fun openCamera() {
+        val dir = java.io.File(context.cacheDir, "camera").apply { mkdirs() }
+        val uri = androidx.core.content.FileProvider.getUriForFile(context, context.packageName + ".camera", java.io.File(dir, "photo-${System.currentTimeMillis()}.jpg"))
+        shot = uri
+        runCatching { takePhoto.launch(uri) }.onFailure { Toast.makeText(context, "No camera app found", Toast.LENGTH_SHORT).show() }
+    }
+    val cameraPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) openCamera() else Toast.makeText(context, "Allow the camera to take photos here", Toast.LENGTH_SHORT).show()
+    }
+    var photoMenu by remember { mutableStateOf(false) }
     LaunchedEffect(recording) {
         while (recording) {
             elapsed = System.currentTimeMillis() - recordStart
@@ -567,8 +585,17 @@ private fun Composer(convId: String, kind: ConvKind, replyTo: ChatMessage?, name
         }
         Row(Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 6.dp), verticalAlignment = Alignment.Bottom) {
             if (kind != ConvKind.PUBLIC && !recording) {
-                IconButton(onClick = { pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }) {
-                    Icon(Icons.Rounded.AddPhotoAlternate, "Send a photo")
+                Box {
+                    IconButton(onClick = { photoMenu = true }) { Icon(Icons.Rounded.AddPhotoAlternate, "Send a photo") }
+                    DropdownMenu(photoMenu, onDismissRequest = { photoMenu = false }) {
+                        DropdownMenuItem(text = { Text("Gallery") }, leadingIcon = { Icon(Icons.Rounded.PhotoLibrary, null) }, onClick = {
+                            photoMenu = false; pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                        })
+                        DropdownMenuItem(text = { Text("Take a photo") }, leadingIcon = { Icon(Icons.Rounded.PhotoCamera, null) }, onClick = {
+                            photoMenu = false
+                            if (Permissions.has(context, Manifest.permission.CAMERA)) openCamera() else cameraPermission.launch(Manifest.permission.CAMERA)
+                        })
+                    }
                 }
             }
             if (recording) {

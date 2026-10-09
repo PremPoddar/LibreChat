@@ -19,7 +19,8 @@ import java.io.File
 class PreparedPhoto(val bytes: ByteArray, val thumbnail: ByteArray, val width: Int, val height: Int)
 
 object Photos {
-    private const val MAX_SIDE = 1600
+    // About 150–250 KB: big enough to look good, small enough to cross the mesh in seconds.
+    private const val MAX_SIDE = 1280
     private const val THUMB_SIDE = 48
     private val cache = object : LruCache<String, ImageBitmap>(24) {}
 
@@ -45,7 +46,7 @@ object Photos {
         val photo = Bitmap.createBitmap(raw, 0, 0, raw.width, raw.height, m, true)
         val thumbScale = THUMB_SIDE.toFloat() / maxOf(photo.width, photo.height)
         val thumb = Bitmap.createScaledBitmap(photo, maxOf(1, (photo.width * thumbScale).toInt()), maxOf(1, (photo.height * thumbScale).toInt()), true)
-        return PreparedPhoto(jpeg(photo, 80), jpeg(thumb, 50), photo.width, photo.height)
+        return PreparedPhoto(jpeg(photo, 75), jpeg(thumb, 50), photo.width, photo.height)
     }
 
     private fun jpeg(b: Bitmap, quality: Int) = ByteArrayOutputStream().also { b.compress(Bitmap.CompressFormat.JPEG, quality, it) }.toByteArray()
