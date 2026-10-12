@@ -25,7 +25,7 @@ fun MessageEntity.toModel() = ChatMessage(
     reactions = runCatching { json.decodeFromString<Map<String, List<String>>>(reactions) }.getOrDefault(emptyMap()),
     media = if (mediaTransfer == null) null else MediaInfo(
         mediaMime ?: "", mediaSize ?: 0, mediaDuration ?: 0, mediaWidth ?: 0, mediaHeight ?: 0, mediaThumb ?: ByteArray(0),
-        mediaKey ?: ByteArray(0), mediaDigest ?: ByteArray(0), mediaTransfer, mediaChunks ?: 0, mediaReceived ?: 0, mediaPath,
+        mediaKey ?: ByteArray(0), mediaDigest ?: ByteArray(0), mediaTransfer, mediaChunks ?: 0, mediaReceived ?: 0, mediaPath, mediaName.orEmpty(),
     ),
 )
 
@@ -34,5 +34,5 @@ fun ChatMessage.toEntity() = MessageEntity(
     replyTo = replyTo, expiresAt = expiresAt, deleted = deleted, reactions = json.encodeToString(reactions),
     mediaMime = media?.mime, mediaSize = media?.size, mediaDuration = media?.durationMs, mediaWidth = media?.width,
     mediaHeight = media?.height, mediaThumb = media?.thumbnail, mediaKey = media?.key, mediaDigest = media?.digest,
-    mediaTransfer = media?.transferId, mediaChunks = media?.chunks, mediaReceived = media?.received, mediaPath = media?.path,
+    mediaTransfer = media?.transferId, mediaChunks = media?.chunks, mediaReceived = media?.received, mediaPath = media?.path, mediaName = media?.name,
 )

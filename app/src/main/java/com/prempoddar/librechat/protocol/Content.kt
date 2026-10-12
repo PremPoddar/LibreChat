@@ -35,6 +35,8 @@ sealed class Content {
         val caption: String = "",
         val replyTo: String? = null,
         val expiresIn: Long = 0,
+        /** The file's name, for files sent as files. */
+        val name: String = "",
     ) : Content()
 
     @Serializable @SerialName("reaction")
@@ -79,4 +81,4 @@ sealed class Content {
     }
 }
 
-enum class MediaKind { PHOTO, VOICE }
+enum class MediaKind { PHOTO, VOICE, FILE }

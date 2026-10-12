@@ -2,4 +2,6 @@
 <paths>
     <!-- Photos taken for a chat wait here until they're prepared and sent. -->
     <cache-path name="camera" path="camera/" />
+    <!-- Received files, decrypted only while another app opens them. -->
+    <cache-path name="play" path="play/" />
 </paths>

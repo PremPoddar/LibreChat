@@ -86,6 +86,7 @@ data class MessageEntity(
     val mediaChunks: Int?,
     val mediaReceived: Int?,
     val mediaPath: String?,
+    val mediaName: String? = null,
 )
 
 @Entity(tableName = "outbox")

@@ -27,7 +27,10 @@ object Photos {
     /** Shrinks a picked photo to at most 1600 px, upright, as JPEG — mesh links are slow. */
     fun prepare(context: Context, uri: Uri): PreparedPhoto? {
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        context.contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it, null, bounds) } ?: return null
+        // Measuring returns no bitmap by design, so success is judged by the size it reads.
+        val stream = context.contentResolver.openInputStream(uri) ?: return null
+        stream.use { BitmapFactory.decodeStream(it, null, bounds) }
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
         var sample = 1
         while (maxOf(bounds.outWidth, bounds.outHeight) / (sample * 2) >= MAX_SIDE) sample *= 2
         val raw = context.contentResolver.openInputStream(uri)?.use {

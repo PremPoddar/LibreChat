@@ -22,18 +22,26 @@ import javax.crypto.spec.GCMParameterSpec
         KeyShareEntity::class, GroupEntity::class, ConversationEntity::class, MessageEntity::class,
         OutboxEntity::class, PendingEntity::class,
     ],
-    version = 1,
+    version = 2,
 )
 abstract class ChatDatabase : RoomDatabase() {
     abstract fun dao(): ChatDao
 
     companion object {
+        /** Version 2 remembers the names of files sent as files. */
+        private val ADD_FILE_NAMES = object : androidx.room.migration.Migration(1, 2) {
+            override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE messages ADD COLUMN mediaName TEXT")
+            }
+        }
+
         /** The database is SQLCipher-encrypted with a random key that only Android Keystore can unwrap. */
         fun open(context: Context): ChatDatabase {
             System.loadLibrary("sqlcipher")
             val key = LocalKeys.secret(context, "db")
             return Room.databaseBuilder(context, ChatDatabase::class.java, "librechat.db")
                 .openHelperFactory(SupportOpenHelperFactory(key))
+                .addMigrations(ADD_FILE_NAMES)
                 .build()
         }
     }

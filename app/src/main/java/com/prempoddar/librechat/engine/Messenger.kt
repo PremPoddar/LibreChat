@@ -165,7 +165,8 @@ class Messenger(
         val person = store.person(p.sender) ?: Person(p.sender, id.toBytes(), post.name.take(32)).also { store.savePerson(it) }
         if (person.state == PersonState.BLOCKED) return
         val content = Content.fromBytes(post.content) ?: return
-        if (content !is Content.Text && content !is Content.Reaction && content !is Content.Delete) return
+        if (content !is Content.Text && content !is Content.Reaction && content !is Content.Delete && content !is Content.Media) return
+        if (content is Content.Media && content.chunks > MAX_PUBLIC_CHUNKS) return
         handleContent(p.sender, ConvIds.PUBLIC, content, p.timestamp)
     }
 
@@ -212,7 +213,9 @@ class Messenger(
     }
 
     private suspend fun onChunk(p: Packet) {
-        val forMe = p.recipient == me || (p.isBroadcast && p.group.isNotEmpty() && store.group(p.group.hex())?.let { it.active && me in it.members } == true)
+        val forMe = p.recipient == me || (p.isBroadcast && p.group.isNotEmpty() && store.group(p.group.hex())?.let { it.active && me in it.members } == true) ||
+            // Public pieces go to everyone, but only within the smaller public limit.
+            (p.isBroadcast && p.group.isEmpty() && (MediaChunk.fromBytes(p.payload)?.total ?: Int.MAX_VALUE) <= MAX_PUBLIC_CHUNKS)
         if (!forMe) return
         val chunk = MediaChunk.fromBytes(p.payload) ?: return
         if (chunk.total !in 1..MAX_CHUNKS || chunk.index !in 0 until chunk.total) return
@@ -273,12 +276,12 @@ class Messenger(
                 if (store.message(content.id) != null || content.chunks !in 1..MAX_CHUNKS) return
                 val msg = ChatMessage(
                     id = content.id, convId = conv, sender = sender, mine = false,
-                    kind = if (content.kind == MediaKind.PHOTO) MsgKind.PHOTO else MsgKind.VOICE,
+                    kind = msgKind(content.kind),
                     text = content.caption.take(MAX_TEXT), at = at, status = MsgStatus.RECEIVED, replyTo = content.replyTo,
                     expiresAt = if (content.expiresIn > 0) now + content.expiresIn * 1000 else 0,
                     media = MediaInfo(
                         content.mime, content.size, content.durationMs, content.width, content.height, content.thumbnail,
-                        content.key, content.digest, content.transferId, content.chunks,
+                        content.key, content.digest, content.transferId, content.chunks, name = content.name.take(200),
                         received = transfers[content.transferId]?.parts?.count { it != null } ?: 0,
                     ),
                 )
@@ -357,27 +360,28 @@ class Messenger(
         durationMs: Long = 0,
         caption: String = "",
         replyTo: String? = null,
+        name: String = "",
     ): ChatMessage = locked {
-        require(ConvIds.kind(conv) != ConvKind.PUBLIC) { "media is not sent to the public chat" }
         val c = ensureConversation(conv)
         val id = newId()
         val now = clock()
         val sealed = MediaCrypto.encrypt(data)
         val transferId = newId()
         val chunks = sealed.blob.toList().chunked(CHUNK_SIZE).map { it.toByteArray() }
-        require(chunks.size <= MAX_CHUNKS) { "file too large" }
+        val limit = if (ConvIds.kind(conv) == ConvKind.PUBLIC) MAX_PUBLIC_CHUNKS else MAX_CHUNKS
+        require(chunks.size <= limit) { "That's too big to send here (up to ${limit * CHUNK_SIZE / 1_000_000} MB)" }
         files.saveBlob(transferId, sealed.blob)
         val path = files.saveFile(id, mime, data)
-        val media = MediaInfo(mime, data.size.toLong(), durationMs, width, height, thumbnail, sealed.key, sealed.digest, transferId, chunks.size, chunks.size, path)
+        val media = MediaInfo(mime, data.size.toLong(), durationMs, width, height, thumbnail, sealed.key, sealed.digest, transferId, chunks.size, chunks.size, path, name)
         val msg = ChatMessage(
-            id, conv, me, true, if (kind == MediaKind.PHOTO) MsgKind.PHOTO else MsgKind.VOICE, caption.trim(), now,
+            id, conv, me, true, msgKind(kind), caption.trim(), now,
             MsgStatus.SENDING, replyTo, expiresAt = if (c.timerSeconds > 0) now + c.timerSeconds * 1000 else 0, media = media,
         )
         store.saveMessage(msg)
         store.saveConversation(c.copy(lastActivity = now, preview = preview(msg)))
         val content = Content.Media(
             id, kind, mime, media.size, durationMs, width, height, thumbnail, sealed.key, sealed.digest,
-            transferId, chunks.size, caption.trim(), replyTo, c.timerSeconds,
+            transferId, chunks.size, caption.trim(), replyTo, c.timerSeconds, name,
         )
         deliver(conv, content, id)
         chunks.forEachIndexed { i, bytes -> sendChunk(conv, MediaChunk(transferId, i, chunks.size, bytes)) }
@@ -652,6 +656,7 @@ class Messenger(
             to != null -> Packet(type = PacketType.MEDIA_CHUNK, sender = me, recipient = to, timestamp = clock(), payload = chunk.toBytes())
             ConvIds.kind(conv) == ConvKind.DIRECT ->
                 Packet(type = PacketType.MEDIA_CHUNK, sender = me, recipient = ConvIds.peerOf(conv), timestamp = clock(), payload = chunk.toBytes())
+            ConvIds.kind(conv) == ConvKind.PUBLIC -> Packet(type = PacketType.MEDIA_CHUNK, sender = me, timestamp = clock(), payload = chunk.toBytes())
             else -> Packet(type = PacketType.MEDIA_CHUNK, sender = me, group = Bytes.unhex(ConvIds.groupOf(conv)), timestamp = clock(), payload = chunk.toBytes())
         }
         emit(router.send(packet))
@@ -769,6 +774,7 @@ class Messenger(
     private fun preview(m: ChatMessage): String = when (m.kind) {
         MsgKind.PHOTO -> if (m.text.isNotBlank()) "📷 ${m.text}" else "📷 Photo"
         MsgKind.VOICE -> "🎤 Voice note"
+        MsgKind.FILE -> "📎 " + (m.media?.name?.ifBlank { null } ?: "File")
         else -> m.text
     }.take(120)
 
@@ -785,6 +791,8 @@ class Messenger(
         const val MAX_TEXT = 4_000
         const val CHUNK_SIZE = 8 * 1024
         const val MAX_CHUNKS = 2_000
+        /** The public chat floods every phone in range, so it carries less: about 4 MB. */
+        const val MAX_PUBLIC_CHUNKS = 500
         const val MAX_WAITING_GROUP = 500
         const val RETRY_MS = 30_000L
         const val OUTBOX_FOR_MS = 24L * 60 * 60 * 1000
@@ -793,4 +801,10 @@ class Messenger(
         const val PREKEY_KEEP_MS = 14L * 24 * 60 * 60 * 1000
         val TIMER_CHOICES = setOf(0L, 3_600L, 86_400L, 604_800L)
     }
+}
+
+private fun msgKind(kind: MediaKind) = when (kind) {
+    MediaKind.PHOTO -> MsgKind.PHOTO
+    MediaKind.VOICE -> MsgKind.VOICE
+    MediaKind.FILE -> MsgKind.FILE
 }

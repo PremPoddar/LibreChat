@@ -73,7 +73,7 @@ data class Group(
 
 enum class MsgStatus { SENDING, SENT, DELIVERED, READ, FAILED, RECEIVED, SEEN }
 
-enum class MsgKind { TEXT, PHOTO, VOICE, SYSTEM }
+enum class MsgKind { TEXT, PHOTO, VOICE, SYSTEM, FILE }
 
 data class MediaInfo(
     val mime: String,
@@ -89,6 +89,8 @@ data class MediaInfo(
     val received: Int = 0,
     /** Local decrypted file, once complete. */
     val path: String? = null,
+    /** Original file name, for files. */
+    val name: String = "",
 )
 
 data class ChatMessage(

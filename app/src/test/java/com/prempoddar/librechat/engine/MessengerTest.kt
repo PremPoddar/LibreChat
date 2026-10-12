@@ -181,6 +181,28 @@ class MessengerTest {
         assertThat(c.files.files[got.media!!.path]).isEqualTo(photo)
     }
 
+    @Test fun filesArriveWithTheirNames() = runTest {
+        val (a, _, c) = line()
+        val doc = Random.bytes(30_000)
+        a.messenger.sendMedia(ConvIds.direct(c.id), MediaKind.FILE, "application/pdf", doc, ByteArray(0), name = "notes.pdf")
+        net.settle()
+        val got = c.store.inConv(ConvIds.direct(a.id)).single()
+        assertThat(got.kind).isEqualTo(MsgKind.FILE)
+        assertThat(got.media!!.name).isEqualTo("notes.pdf")
+        assertThat(c.files.files[got.media.path]).isEqualTo(doc)
+    }
+
+    @Test fun photosCanBeSharedWithEveryone() = runTest {
+        val (a, b, c) = line()
+        val photo = Random.bytes(20_000)
+        a.messenger.sendMedia(ConvIds.PUBLIC, MediaKind.PHOTO, "image/jpeg", photo, byteArrayOf(1), 10, 10)
+        net.settle()
+        listOf(b, c).forEach { peer ->
+            val got = peer.store.inConv(ConvIds.PUBLIC).single { it.kind == MsgKind.PHOTO }
+            assertThat(peer.files.files[got.media!!.path]).isEqualTo(photo)
+        }
+    }
+
     @Test fun missingMediaPiecesAreRequestedAgain() = runTest {
         val (a, _, c) = line()
         var lose = true

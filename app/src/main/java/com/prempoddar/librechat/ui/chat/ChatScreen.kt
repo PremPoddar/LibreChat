@@ -1,5 +1,9 @@
 package com.prempoddar.librechat.ui.chat
 
+import com.prempoddar.librechat.engine.Messenger
+import androidx.compose.material.icons.rounded.Description
+import androidx.compose.material.icons.rounded.AttachFile
+import androidx.compose.material.icons.rounded.AddCircle
 import androidx.compose.material.icons.rounded.PhotoCamera
 import androidx.compose.material.icons.rounded.PhotoLibrary
 import android.net.Uri
@@ -226,9 +230,17 @@ private fun Header(
                 when (kind) {
                     ConvKind.DIRECT -> person?.let { p ->
                         val live = now - p.lastSeen < 90_000
+                        // How messages reach them right now: straight to their phone, hopping through
+                        // others, or held until they're back in range.
+                        val near = status.neighbours[p.peerId]
+                        val (label, colour) = when {
+                            near != null -> (if (near.wifi) "DIRECT · WI-FI" else "DIRECT · BLUETOOTH") to s.phosphor
+                            live -> "VIA MESH · ${p.hops} HOP${if (p.hops == 1) "" else "S"}" to s.amber
+                            else -> "OUT OF RANGE · MESSAGES WAIT" to s.faint
+                        }
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            SignalGlyph(if (live) p.hops else Int.MAX_VALUE, status.neighbours[p.peerId]?.rssi)
-                            if (status.neighbours[p.peerId]?.wifi == true) Text("  WI-FI", style = MonoSmall, color = s.phosphor)
+                            SignalGlyph(if (live) p.hops else Int.MAX_VALUE, near?.rssi)
+                            Text("  $label", style = MonoSmall, color = colour)
                         }
                     }
                     ConvKind.GROUP -> Text("${members ?: 0} members", style = MonoSmall, color = s.faint)
@@ -396,6 +408,7 @@ internal fun Bubble(
                 when (m.kind) {
                     MsgKind.PHOTO -> PhotoContent(m)
                     MsgKind.VOICE -> VoiceContent(m)
+                    MsgKind.FILE -> FileContent(m)
                     else -> Unit
                 }
                 if (m.text.isNotEmpty()) Text(m.text, style = MaterialTheme.typography.bodyLarge)
@@ -564,6 +577,31 @@ private fun Composer(convId: String, kind: ConvKind, replyTo: ChatMessage?, name
         if (granted) openCamera() else Toast.makeText(context, "Allow the camera to take photos here", Toast.LENGTH_SHORT).show()
     }
     var photoMenu by remember { mutableStateOf(false) }
+    val pickFile = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        uri ?: return@rememberLauncherForActivityResult
+        val caption = text.trim()
+        text = ""
+        val reply = replyTo?.id
+        onClearReply()
+        AppGraph.work.launch {
+            val error = runCatching {
+                val resolver = context.contentResolver
+                var name = "file"
+                var size = -1L
+                resolver.query(uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME, android.provider.OpenableColumns.SIZE), null, null, null)?.use { c ->
+                    if (c.moveToFirst()) { c.getString(0)?.let { name = it }; if (!c.isNull(1)) size = c.getLong(1) }
+                }
+                val limit = (if (kind == ConvKind.PUBLIC) Messenger.MAX_PUBLIC_CHUNKS else Messenger.MAX_CHUNKS).toLong() * Messenger.CHUNK_SIZE - 64
+                if (size > limit) error("That's too big to send here (up to ${limit / 1_000_000} MB)")
+                val bytes = resolver.openInputStream(uri)?.use { it.readBytes() } ?: error("That file couldn't be opened")
+                val mime = resolver.getType(uri) ?: "application/octet-stream"
+                AppGraph.messenger.sendMedia(convId, MediaKind.FILE, mime, bytes, ByteArray(0), caption = caption, replyTo = reply, name = name)
+            }.exceptionOrNull()
+            if (error != null) withContext(Dispatchers.Main) {
+                Toast.makeText(context, error.message?.takeIf { it.length < 90 } ?: "The file couldn't be sent", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
     LaunchedEffect(recording) {
         while (recording) {
             elapsed = System.currentTimeMillis() - recordStart
@@ -584,9 +622,9 @@ private fun Composer(convId: String, kind: ConvKind, replyTo: ChatMessage?, name
             }
         }
         Row(Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 6.dp), verticalAlignment = Alignment.Bottom) {
-            if (kind != ConvKind.PUBLIC && !recording) {
+            if (!recording) {
                 Box {
-                    IconButton(onClick = { photoMenu = true }) { Icon(Icons.Rounded.AddPhotoAlternate, "Send a photo") }
+                    IconButton(onClick = { photoMenu = true }) { Icon(Icons.Rounded.AddCircle, "Send a photo or file") }
                     DropdownMenu(photoMenu, onDismissRequest = { photoMenu = false }) {
                         DropdownMenuItem(text = { Text("Gallery") }, leadingIcon = { Icon(Icons.Rounded.PhotoLibrary, null) }, onClick = {
                             photoMenu = false; pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
@@ -594,6 +632,9 @@ private fun Composer(convId: String, kind: ConvKind, replyTo: ChatMessage?, name
                         DropdownMenuItem(text = { Text("Take a photo") }, leadingIcon = { Icon(Icons.Rounded.PhotoCamera, null) }, onClick = {
                             photoMenu = false
                             if (Permissions.has(context, Manifest.permission.CAMERA)) openCamera() else cameraPermission.launch(Manifest.permission.CAMERA)
+                        })
+                        DropdownMenuItem(text = { Text("File") }, leadingIcon = { Icon(Icons.Rounded.AttachFile, null) }, onClick = {
+                            photoMenu = false; pickFile.launch(arrayOf("*/*"))
                         })
                     }
                 }
@@ -662,6 +703,43 @@ private fun Composer(convId: String, kind: ConvKind, replyTo: ChatMessage?, name
                     contentAlignment = Alignment.Center,
                 ) { Icon(Icons.Rounded.Mic, "Hold to record a voice note", tint = if (recording) MaterialTheme.colorScheme.onError else MaterialTheme.colorScheme.onPrimaryContainer) }
             }
+        }
+    }
+}
+
+/** A file sent as a file: its name and size; tap to open it with another app once it has arrived. */
+@Composable
+private fun FileContent(m: ChatMessage) {
+    val media = m.media ?: return
+    val context = LocalContext.current
+    val s = LocalSignal.current
+    val path = media.path
+    val name = media.name.ifBlank { "File" }
+    Row(
+        Modifier.padding(bottom = 4.dp).widthIn(min = 220.dp, max = 300.dp).clip(RoundedCornerShape(12.dp))
+            .background(LocalContentColor.current.copy(alpha = 0.08f))
+            .clickable(enabled = path != null) {
+                val ext = name.substringAfterLast('.', "bin")
+                val file = AppGraph.files.playable(path!!, ext) ?: return@clickable
+                val uri = androidx.core.content.FileProvider.getUriForFile(context, context.packageName + ".camera", file)
+                runCatching {
+                    context.startActivity(
+                        android.content.Intent.createChooser(
+                            android.content.Intent(android.content.Intent.ACTION_VIEW).setDataAndType(uri, media.mime).addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION),
+                            "Open $name",
+                        ),
+                    )
+                }.onFailure { Toast.makeText(context, "No app here can open this file", Toast.LENGTH_SHORT).show() }
+            }
+            .padding(10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(Icons.Rounded.Description, null, Modifier.size(32.dp), tint = s.phosphor)
+        Gap(w = 10.dp)
+        Column(Modifier.weight(1f)) {
+            Text(name, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            val size = if (media.size >= 1_000_000) "%.1f MB".format(media.size / 1_000_000f) else "${(media.size / 1000).coerceAtLeast(1)} KB"
+            Text(if (path == null && !m.mine) "RECEIVING ${media.received}/${media.chunks} · $size" else size, style = MonoSmall, color = LocalContentColor.current.copy(alpha = 0.7f))
         }
     }
 }
