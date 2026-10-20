@@ -20,6 +20,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -68,7 +69,7 @@ fun BlockedScreen(onBack: () -> Unit) {
 @Composable
 fun SecurityScreen(onBack: () -> Unit) {
     val sections = listOf(
-        "Your keys" to "LibreChat makes your keys on this phone the first time it runs. They never leave it, and there's no account or server that could hold a copy. Reinstalling gives you a new identity.",
+        "Your keys" to "LibreChat makes your keys on this phone the first time it runs. They leave it only in a backup you make, sealed with your passphrase, and there's no account or server that could hold a copy. Reinstalling without a backup gives you a new identity.",
         "Direct messages and groups" to "Encrypted end to end with the same building blocks as Signal: an X3DH key agreement and the Double Ratchet for direct messages, Sender Keys for groups. Each message uses a fresh key, so a key stolen tomorrow can't unlock today's messages. Phones that relay your messages carry scrambled bytes they can't read.",
         "Public chat" to "Readable by anyone in range — that's the point of it. Every public message is signed, so nobody can post under your name.",
         "What relays can see" to "Phones passing a message on can see which mesh id it's from and to (or which group id), its size and when it was sent. They can't see the words, photos, names inside groups, or who reacted to what.",
@@ -84,5 +85,96 @@ fun SecurityScreen(onBack: () -> Unit) {
                 Text(body, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
             }
         }
+    }
+}
+
+/**
+ * Backing up LibreChat to move it to a new phone: everything sealed with a passphrase; and
+ * restoring such a backup, which replaces LibreChat on this phone.
+ */
+@Composable
+fun BackupScreen(onBack: () -> Unit) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val scope = rememberCoroutineScope()
+    var pass by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf("") }
+    var again by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf("") }
+    var busy by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
+    var note by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
+    var restoreUri by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<android.net.Uri?>(null) }
+    var restorePass by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf("") }
+    var restored by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    val stamp = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.ROOT).format(java.util.Date())
+    val save = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/octet-stream")) { uri ->
+        uri ?: return@rememberLauncherForActivityResult
+        busy = "Sealing your backup…"
+        scope.launch {
+            note = runCatching {
+                context.contentResolver.openOutputStream(uri)!!.use { com.prempoddar.librechat.backup.ChatBackup.backup(context, it, pass.toCharArray()) }
+                "Backup saved. Keep the passphrase safe: without it nobody, including you, can open it."
+            }.getOrElse { "The backup couldn't be saved: ${it.message}" }
+            pass = ""; again = ""; busy = null
+        }
+    }
+    val pick = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocument()) { restoreUri = it }
+    val s = LocalSignal.current
+    Page("Back up and restore", onBack) {
+        Text("Back up", style = MaterialTheme.typography.titleMedium)
+        Text(
+            "Your identity, contacts, chats, photos, voice notes and settings, in one file sealed with a passphrase. Use it to move LibreChat to a new phone.",
+            style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        androidx.compose.material3.OutlinedTextField(pass, { pass = it }, label = { Text("Passphrase (12 or more characters)") }, singleLine = true,
+            visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth().padding(top = 8.dp))
+        androidx.compose.material3.OutlinedTextField(again, { again = it }, label = { Text("Same passphrase again") }, singleLine = true,
+            visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            isError = again.isNotEmpty() && again != pass)
+        androidx.compose.material3.Button(
+            enabled = busy == null && pass.length >= 12 && pass == again,
+            onClick = { save.launch("LibreChat backup $stamp.lcbackup") },
+            modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+        ) { Text("Save backup") }
+        Gap(28.dp)
+        Text("Restore", style = MaterialTheme.typography.titleMedium)
+        Text(
+            "Replaces LibreChat on this phone with a backup, then restarts it. Messages people sent you after the backup was made can't be read on the restored copy: each chat's keys move on with every message. Ask them to send those again.",
+            style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        androidx.compose.material3.OutlinedButton(enabled = busy == null, onClick = { pick.launch(arrayOf("*/*")) }, modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) { Text("Choose a backup…") }
+        busy?.let { Text(it, color = s.phosphor, modifier = Modifier.padding(top = 16.dp)) }
+        note?.let { Text(it, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 16.dp)) }
+    }
+    restoreUri?.let { uri ->
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { if (busy == null) { restoreUri = null; restorePass = "" } },
+            title = { Text("Restore this backup?") },
+            text = {
+                Column {
+                    Text("Everything LibreChat has on this phone now is replaced by the backup.")
+                    androidx.compose.material3.OutlinedTextField(restorePass, { restorePass = it }, label = { Text("Backup passphrase") }, singleLine = true,
+                        visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth().padding(top = 12.dp))
+                }
+            },
+            confirmButton = {
+                TextButton(enabled = busy == null && restorePass.isNotEmpty(), onClick = {
+                    busy = "Checking and restoring…"
+                    scope.launch {
+                        val r = runCatching {
+                            context.contentResolver.openInputStream(uri)!!.use { com.prempoddar.librechat.backup.ChatBackup.restore(context, it, restorePass.toCharArray()) }
+                        }
+                        busy = null; restorePass = ""; restoreUri = null
+                        if (r.isSuccess) restored = true else note = r.exceptionOrNull()?.message ?: "That backup couldn't be restored"
+                    }
+                }) { Text("Restore") }
+            },
+            dismissButton = { TextButton(enabled = busy == null, onClick = { restoreUri = null; restorePass = "" }) { Text("Cancel") } },
+        )
+    }
+    if (restored) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = {},
+            title = { Text("Restored") },
+            text = { Text("LibreChat will now restart on your backup.") },
+            confirmButton = { TextButton(onClick = { com.prempoddar.librechat.backup.ChatBackup.restart(context) }) { Text("Restart") } },
+        )
     }
 }

@@ -40,6 +40,7 @@ fun HomeScreen(
     onSecurity: () -> Unit,
     onAppearance: () -> Unit,
     onAbout: () -> Unit,
+    onBackup: () -> Unit = {},
 ) {
     var tab by rememberSaveable { mutableIntStateOf(0) }
     val config = LocalConfiguration.current
@@ -48,7 +49,7 @@ fun HomeScreen(
         when (tab) {
             0 -> ChatsTab(onOpenChat, onNewGroup, onSearch, onNearby = { tab = 1 })
             1 -> NearbyTab(onOpenPerson)
-            else -> YouTab(onBlocked, onSecurity, onAppearance, onAbout)
+            else -> YouTab(onBlocked, onSecurity, onAppearance, onAbout, onBackup)
         }
     }
     if (wide) {

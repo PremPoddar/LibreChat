@@ -1,5 +1,6 @@
 package com.prempoddar.librechat.ui.home
 
+import androidx.compose.material.icons.rounded.Backup
 import android.widget.Toast
 import androidx.biometric.BiometricManager
 import androidx.compose.foundation.Image
@@ -69,7 +70,7 @@ import com.prempoddar.librechat.ui.theme.MonoSmall
 import kotlinx.coroutines.launch
 
 @Composable
-fun YouTab(onBlocked: () -> Unit, onSecurity: () -> Unit, onAppearance: () -> Unit, onAbout: () -> Unit) {
+fun YouTab(onBlocked: () -> Unit, onSecurity: () -> Unit, onAppearance: () -> Unit, onAbout: () -> Unit, onBackup: () -> Unit = {}) {
     val context = LocalContext.current
     val settings by AppGraph.settings.settings.collectAsStateWithLifecycle(AppSettings())
     val scope = rememberCoroutineScope()
@@ -141,6 +142,7 @@ fun YouTab(onBlocked: () -> Unit, onSecurity: () -> Unit, onAppearance: () -> Un
             SettingsRow("How LibreChat protects you", "Encryption, relays and what they can see", Icons.Rounded.Shield, onClick = onSecurity) { Chevron() }
         }
         SettingsGroup("General") {
+            SettingsRow("Back up and restore", "Move LibreChat to a new phone, sealed with a passphrase", Icons.Rounded.Backup, onClick = onBackup) { Chevron() }
             SettingsRow("Appearance", "Theme, colours and black backgrounds", Icons.Rounded.Palette, onClick = onAppearance) { Chevron() }
             SettingsRow("About LibreChat", "Version, licences", Icons.Rounded.Info, onClick = onAbout) { Chevron() }
         }

@@ -64,6 +64,20 @@ object LocalKeys {
         return secret
     }
 
+    /** Every local secret by name, for a passphrase-sealed backup. */
+    @Synchronized
+    fun all(context: Context): Map<String, ByteArray> {
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        return prefs.all.keys.associateWith { secret(context, it) }
+    }
+
+    /** Stores [secret] under [name], wrapped by this phone's Keystore; used when restoring a backup. */
+    @Synchronized
+    fun put(context: Context, name: String, secret: ByteArray) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+            .putString(name, Base64.encodeToString(wrap(secret), Base64.NO_WRAP)).commit()
+    }
+
     private fun keystoreKey(): SecretKey {
         val ks = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
         (ks.getKey(ALIAS, null) as? SecretKey)?.let { return it }

@@ -57,6 +57,7 @@ fun LibreNavHost(onboarded: Boolean, openRequest: String?, onOpened: () -> Unit)
                 onNewGroup = { nav.navigate("newgroup") }, onSearch = { nav.navigate("search") },
                 onBlocked = { nav.navigate("blocked") }, onSecurity = { nav.navigate("security") },
                 onAppearance = { nav.navigate("appearance") }, onAbout = { nav.navigate("about") },
+                onBackup = { nav.navigate("backup") },
             )
         }
         composable("chat/{id}") { e ->
@@ -71,6 +72,7 @@ fun LibreNavHost(onboarded: Boolean, openRequest: String?, onOpened: () -> Unit)
         composable("search") { SearchScreen(onBack = { nav.popBackStack() }, onOpenChat = chat) }
         composable("blocked") { BlockedScreen(onBack = { nav.popBackStack() }) }
         composable("security") { SecurityScreen(onBack = { nav.popBackStack() }) }
+        composable("backup") { com.prempoddar.librechat.ui.settings.BackupScreen(onBack = { nav.popBackStack() }) }
         composable("appearance") {
             val settings by AppGraph.settings.settings.collectAsStateWithLifecycle(AppSettings())
             val scope = rememberCoroutineScope()
