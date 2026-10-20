@@ -1,0 +1,609 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 2,
+    "identityHash": "a8e3a6b57eb67badfc3312959df74062",
+    "entities": [
+      {
+        "tableName": "kv",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`key` TEXT NOT NULL, `value` BLOB NOT NULL, PRIMARY KEY(`key`))",
+        "fields": [
+          {
+            "fieldPath": "key",
+            "columnName": "key",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "value",
+            "columnName": "value",
+            "affinity": "BLOB",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "key"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "people",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`peerId` TEXT NOT NULL, `identity` BLOB NOT NULL, `name` TEXT NOT NULL, `prekeyId` INTEGER, `prekey` BLOB, `prekeySignature` BLOB, `lastSeen` INTEGER NOT NULL, `hops` INTEGER NOT NULL, `wifiAware` INTEGER NOT NULL, `state` TEXT NOT NULL, `verified` INTEGER NOT NULL, PRIMARY KEY(`peerId`))",
+        "fields": [
+          {
+            "fieldPath": "peerId",
+            "columnName": "peerId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "identity",
+            "columnName": "identity",
+            "affinity": "BLOB",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "prekeyId",
+            "columnName": "prekeyId",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "prekey",
+            "columnName": "prekey",
+            "affinity": "BLOB",
+            "notNull": false
+          },
+          {
+            "fieldPath": "prekeySignature",
+            "columnName": "prekeySignature",
+            "affinity": "BLOB",
+            "notNull": false
+          },
+          {
+            "fieldPath": "lastSeen",
+            "columnName": "lastSeen",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "hops",
+            "columnName": "hops",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "wifiAware",
+            "columnName": "wifiAware",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "state",
+            "columnName": "state",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "verified",
+            "columnName": "verified",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "peerId"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "sessions",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`peer` TEXT NOT NULL, `blob` BLOB NOT NULL, PRIMARY KEY(`peer`))",
+        "fields": [
+          {
+            "fieldPath": "peer",
+            "columnName": "peer",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "blob",
+            "columnName": "blob",
+            "affinity": "BLOB",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "peer"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "sender_keys",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`groupId` TEXT NOT NULL, `peer` TEXT NOT NULL, `blob` BLOB NOT NULL, PRIMARY KEY(`groupId`, `peer`))",
+        "fields": [
+          {
+            "fieldPath": "groupId",
+            "columnName": "groupId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "peer",
+            "columnName": "peer",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "blob",
+            "columnName": "blob",
+            "affinity": "BLOB",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "groupId",
+            "peer"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "key_shares",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`groupId` TEXT NOT NULL, `peers` TEXT NOT NULL, PRIMARY KEY(`groupId`))",
+        "fields": [
+          {
+            "fieldPath": "groupId",
+            "columnName": "groupId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "peers",
+            "columnName": "peers",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "groupId"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "chat_groups",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `admin` TEXT NOT NULL, `members` TEXT NOT NULL, `version` INTEGER NOT NULL, `active` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "admin",
+            "columnName": "admin",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "members",
+            "columnName": "members",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "version",
+            "columnName": "version",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "active",
+            "columnName": "active",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "conversations",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `kind` TEXT NOT NULL, `title` TEXT NOT NULL, `pinned` INTEGER NOT NULL, `mutedUntil` INTEGER NOT NULL, `timerSeconds` INTEGER NOT NULL, `lastActivity` INTEGER NOT NULL, `unread` INTEGER NOT NULL, `request` INTEGER NOT NULL, `preview` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kind",
+            "columnName": "kind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pinned",
+            "columnName": "pinned",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mutedUntil",
+            "columnName": "mutedUntil",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timerSeconds",
+            "columnName": "timerSeconds",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastActivity",
+            "columnName": "lastActivity",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "unread",
+            "columnName": "unread",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "request",
+            "columnName": "request",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "preview",
+            "columnName": "preview",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "messages",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `convId` TEXT NOT NULL, `sender` TEXT NOT NULL, `mine` INTEGER NOT NULL, `kind` TEXT NOT NULL, `text` TEXT NOT NULL, `at` INTEGER NOT NULL, `status` TEXT NOT NULL, `replyTo` TEXT, `expiresAt` INTEGER NOT NULL, `deleted` INTEGER NOT NULL, `reactions` TEXT NOT NULL, `mediaMime` TEXT, `mediaSize` INTEGER, `mediaDuration` INTEGER, `mediaWidth` INTEGER, `mediaHeight` INTEGER, `mediaThumb` BLOB, `mediaKey` BLOB, `mediaDigest` BLOB, `mediaTransfer` TEXT, `mediaChunks` INTEGER, `mediaReceived` INTEGER, `mediaPath` TEXT, `mediaName` TEXT, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "convId",
+            "columnName": "convId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sender",
+            "columnName": "sender",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mine",
+            "columnName": "mine",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kind",
+            "columnName": "kind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "text",
+            "columnName": "text",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "at",
+            "columnName": "at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "replyTo",
+            "columnName": "replyTo",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "expiresAt",
+            "columnName": "expiresAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "deleted",
+            "columnName": "deleted",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "reactions",
+            "columnName": "reactions",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mediaMime",
+            "columnName": "mediaMime",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "mediaSize",
+            "columnName": "mediaSize",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "mediaDuration",
+            "columnName": "mediaDuration",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "mediaWidth",
+            "columnName": "mediaWidth",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "mediaHeight",
+            "columnName": "mediaHeight",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "mediaThumb",
+            "columnName": "mediaThumb",
+            "affinity": "BLOB",
+            "notNull": false
+          },
+          {
+            "fieldPath": "mediaKey",
+            "columnName": "mediaKey",
+            "affinity": "BLOB",
+            "notNull": false
+          },
+          {
+            "fieldPath": "mediaDigest",
+            "columnName": "mediaDigest",
+            "affinity": "BLOB",
+            "notNull": false
+          },
+          {
+            "fieldPath": "mediaTransfer",
+            "columnName": "mediaTransfer",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "mediaChunks",
+            "columnName": "mediaChunks",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "mediaReceived",
+            "columnName": "mediaReceived",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "mediaPath",
+            "columnName": "mediaPath",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "mediaName",
+            "columnName": "mediaName",
+            "affinity": "TEXT",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_messages_convId",
+            "unique": false,
+            "columnNames": [
+              "convId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_messages_convId` ON `${TABLE_NAME}` (`convId`)"
+          },
+          {
+            "name": "index_messages_expiresAt",
+            "unique": false,
+            "columnNames": [
+              "expiresAt"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_messages_expiresAt` ON `${TABLE_NAME}` (`expiresAt`)"
+          },
+          {
+            "name": "index_messages_mediaTransfer",
+            "unique": false,
+            "columnNames": [
+              "mediaTransfer"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_messages_mediaTransfer` ON `${TABLE_NAME}` (`mediaTransfer`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "outbox",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`packetKey` TEXT NOT NULL, `packet` BLOB NOT NULL, `messageId` TEXT, `peer` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, `lastSentAt` INTEGER NOT NULL, PRIMARY KEY(`packetKey`))",
+        "fields": [
+          {
+            "fieldPath": "packetKey",
+            "columnName": "packetKey",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "packet",
+            "columnName": "packet",
+            "affinity": "BLOB",
+            "notNull": true
+          },
+          {
+            "fieldPath": "messageId",
+            "columnName": "messageId",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "peer",
+            "columnName": "peer",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastSentAt",
+            "columnName": "lastSentAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "packetKey"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "pending",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `peer` TEXT NOT NULL, `content` BLOB NOT NULL, `messageId` TEXT)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "peer",
+            "columnName": "peer",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "content",
+            "columnName": "content",
+            "affinity": "BLOB",
+            "notNull": true
+          },
+          {
+            "fieldPath": "messageId",
+            "columnName": "messageId",
+            "affinity": "TEXT",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      }
+    ],
+    "views": [],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'a8e3a6b57eb67badfc3312959df74062')"
+    ]
+  }
+}
