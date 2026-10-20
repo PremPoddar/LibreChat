@@ -144,7 +144,7 @@ fun YouTab(onBlocked: () -> Unit, onSecurity: () -> Unit, onAppearance: () -> Un
         }
         SettingsGroup("General") {
             SettingsRow("Back up and restore", "Move LibreChat to a new phone, sealed with a passphrase", Icons.Rounded.Backup, onClick = onBackup) { Chevron() }
-            SettingsRow("Look & feel", "Theme, colours, font, shapes and haptics", Icons.Rounded.Palette, onClick = onAppearance) { Chevron() }
+            SettingsRow("Appearance", "Theme, colours, font, shapes and haptics", Icons.Rounded.Palette, onClick = onAppearance) { Chevron() }
             SettingsRow("About LibreChat", "Version, licences", Icons.Rounded.Info, onClick = onAbout) { Chevron() }
         }
         Text(
