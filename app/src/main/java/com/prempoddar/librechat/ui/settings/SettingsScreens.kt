@@ -1,5 +1,6 @@
 package com.prempoddar.librechat.ui.settings
 
+import com.prempoddar.librechat.ui.design.tap
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -40,7 +41,7 @@ private fun Page(title: String, onBack: () -> Unit, content: @Composable () -> U
     val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).verticalScroll(rememberScrollState()).padding(top = top, bottom = 32.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back") }
+            IconButton(onClick = tap(onBack)) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back") }
             Text(title, style = MaterialTheme.typography.titleLarge)
         }
         content()
@@ -59,7 +60,7 @@ fun BlockedScreen(onBack: () -> Unit) {
                 Avatar(p.name, p.peerId, 40.dp)
                 Gap(w = 12.dp)
                 Text(p.name, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
-                TextButton(onClick = { scope.launch { AppGraph.messenger.unblock(p.peerId) } }) { Text("Unblock") }
+                TextButton(onClick = tap { scope.launch { AppGraph.messenger.unblock(p.peerId) } }) { Text("Unblock") }
             }
         }
     }
@@ -130,7 +131,7 @@ fun BackupScreen(onBack: () -> Unit) {
             isError = again.isNotEmpty() && again != pass)
         androidx.compose.material3.Button(
             enabled = busy == null && pass.length >= 12 && pass == again,
-            onClick = { save.launch("LibreChat backup $stamp.lcbackup") },
+            onClick = tap { save.launch("LibreChat backup $stamp.lcbackup") },
             modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
         ) { Text("Save backup") }
         Gap(28.dp)
@@ -139,7 +140,7 @@ fun BackupScreen(onBack: () -> Unit) {
             "Replaces LibreChat on this phone with a backup, then restarts it. Messages people sent you after the backup was made can't be read on the restored copy: each chat's keys move on with every message. Ask them to send those again.",
             style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        androidx.compose.material3.OutlinedButton(enabled = busy == null, onClick = { pick.launch(arrayOf("*/*")) }, modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) { Text("Choose a backup…") }
+        androidx.compose.material3.OutlinedButton(enabled = busy == null, onClick = tap { pick.launch(arrayOf("*/*")) }, modifier = Modifier.fillMaxWidth().padding(top = 12.dp)) { Text("Choose a backup…") }
         busy?.let { Text(it, color = s.phosphor, modifier = Modifier.padding(top = 16.dp)) }
         note?.let { Text(it, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 16.dp)) }
     }
@@ -155,7 +156,7 @@ fun BackupScreen(onBack: () -> Unit) {
                 }
             },
             confirmButton = {
-                TextButton(enabled = busy == null && restorePass.isNotEmpty(), onClick = {
+                TextButton(enabled = busy == null && restorePass.isNotEmpty(), onClick = tap {
                     busy = "Checking and restoring…"
                     scope.launch {
                         val r = runCatching {
@@ -166,7 +167,7 @@ fun BackupScreen(onBack: () -> Unit) {
                     }
                 }) { Text("Restore") }
             },
-            dismissButton = { TextButton(enabled = busy == null, onClick = { restoreUri = null; restorePass = "" }) { Text("Cancel") } },
+            dismissButton = { TextButton(enabled = busy == null, onClick = tap { restoreUri = null; restorePass = "" }) { Text("Cancel") } },
         )
     }
     if (restored) {
@@ -174,7 +175,7 @@ fun BackupScreen(onBack: () -> Unit) {
             onDismissRequest = {},
             title = { Text("Restored") },
             text = { Text("LibreChat will now restart on your backup.") },
-            confirmButton = { TextButton(onClick = { com.prempoddar.librechat.backup.ChatBackup.restart(context) }) { Text("Restart") } },
+            confirmButton = { TextButton(onClick = tap { com.prempoddar.librechat.backup.ChatBackup.restart(context) }) { Text("Restart") } },
         )
     }
 }

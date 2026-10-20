@@ -1,5 +1,6 @@
 package com.prempoddar.librechat.ui.person
 
+import com.prempoddar.librechat.ui.design.tap
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -78,7 +79,7 @@ fun PersonScreen(peerId: String, onBack: () -> Unit, onMessage: (String) -> Unit
     val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
 
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).verticalScroll(rememberScrollState()).padding(top = top, bottom = 32.dp)) {
-        IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back") }
+        IconButton(onClick = tap(onBack)) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back") }
         if (p == null) {
             Text("This person isn't known on this phone.", modifier = Modifier.padding(24.dp))
             return@Column
@@ -104,7 +105,7 @@ fun PersonScreen(peerId: String, onBack: () -> Unit, onMessage: (String) -> Unit
         Row(Modifier.fillMaxWidth().padding(20.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Button(
                 enabled = p.state != PersonState.BLOCKED,
-                onClick = {
+                onClick = tap {
                     scope.launch {
                         val conv = AppGraph.messenger.openDirect(p.peerId)
                         if (conv.timerSeconds == 0L && (settings?.defaultTimer ?: 0) > 0 && conv.lastActivity >= System.currentTimeMillis() - 2_000) {
@@ -116,7 +117,7 @@ fun PersonScreen(peerId: String, onBack: () -> Unit, onMessage: (String) -> Unit
                 modifier = Modifier.weight(1f),
             ) { Text("Message") }
             OutlinedButton(
-                onClick = { scope.launch { if (p.state == PersonState.BLOCKED) AppGraph.messenger.unblock(p.peerId) else AppGraph.messenger.block(p.peerId) } },
+                onClick = tap { scope.launch { if (p.state == PersonState.BLOCKED) AppGraph.messenger.unblock(p.peerId) else AppGraph.messenger.block(p.peerId) } },
                 modifier = Modifier.weight(1f),
             ) { Text(if (p.state == PersonState.BLOCKED) "Unblock" else "Block", color = if (p.state == PersonState.BLOCKED) MaterialTheme.colorScheme.primary else s.danger) }
         }
@@ -139,14 +140,14 @@ fun PersonScreen(peerId: String, onBack: () -> Unit, onMessage: (String) -> Unit
                     }
                 }
                 Row(Modifier.fillMaxWidth().padding(top = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilledTonalButton(onClick = scan, modifier = Modifier.weight(1f)) {
+                    FilledTonalButton(onClick = tap(scan), modifier = Modifier.weight(1f)) {
                         Icon(Icons.Rounded.QrCodeScanner, null, Modifier.size(18.dp)); Text("  Scan theirs")
                     }
-                    FilledTonalButton(onClick = { showMine = true }, modifier = Modifier.weight(1f)) {
+                    FilledTonalButton(onClick = tap { showMine = true }, modifier = Modifier.weight(1f)) {
                         Icon(Icons.Rounded.QrCode2, null, Modifier.size(18.dp)); Text("  Show mine")
                     }
                 }
-                TextButton(onClick = { if (p.verified) scope.launch { AppGraph.messenger.setVerified(p.peerId, false) } else confirmVerify = true }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                TextButton(onClick = tap { if (p.verified) scope.launch { AppGraph.messenger.setVerified(p.peerId, false) } else confirmVerify = true }, modifier = Modifier.align(Alignment.CenterHorizontally)) {
                     Text(if (p.verified) "Clear verification" else "The numbers match: mark verified")
                 }
             }
@@ -164,7 +165,7 @@ fun PersonScreen(peerId: String, onBack: () -> Unit, onMessage: (String) -> Unit
                     Text("Let ${p?.name ?: "them"} scan this from their LibreChat.", textAlign = TextAlign.Center, modifier = Modifier.padding(top = 12.dp))
                 }
             },
-            confirmButton = { TextButton(onClick = { showMine = false }) { Text("Done") } },
+            confirmButton = { TextButton(onClick = tap { showMine = false }) { Text("Done") } },
         )
     }
     if (confirmVerify && p != null) {
@@ -172,8 +173,8 @@ fun PersonScreen(peerId: String, onBack: () -> Unit, onMessage: (String) -> Unit
             onDismissRequest = { confirmVerify = false },
             title = { Text("Mark ${p.name} as verified?") },
             text = { Text("Only do this if you compared all 60 digits with ${p.name} directly, not over a message here.") },
-            confirmButton = { TextButton(onClick = { confirmVerify = false; scope.launch { AppGraph.messenger.setVerified(p.peerId, true) } }) { Text("Verified") } },
-            dismissButton = { TextButton(onClick = { confirmVerify = false }) { Text("Cancel") } },
+            confirmButton = { TextButton(onClick = tap { confirmVerify = false; scope.launch { AppGraph.messenger.setVerified(p.peerId, true) } }) { Text("Verified") } },
+            dismissButton = { TextButton(onClick = tap { confirmVerify = false }) { Text("Cancel") } },
         )
     }
 }

@@ -1,5 +1,6 @@
 package com.prempoddar.librechat.ui.home
 
+import com.prempoddar.librechat.ui.design.tap
 import androidx.compose.material.icons.rounded.Backup
 import android.widget.Toast
 import androidx.biometric.BiometricManager
@@ -96,7 +97,7 @@ fun YouTab(onBlocked: () -> Unit, onSecurity: () -> Unit, onAppearance: () -> Un
                         settings.name.ifBlank { "No name" }, style = MaterialTheme.typography.headlineSmall,
                         color = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.weight(1f, fill = false),
                     )
-                    FilledTonalIconButton(onClick = { editName = true }) { Icon(Icons.Rounded.Edit, "Change name", Modifier.size(18.dp)) }
+                    FilledTonalIconButton(onClick = tap { editName = true }) { Icon(Icons.Rounded.Edit, "Change name", Modifier.size(18.dp)) }
                 }
                 if (id != null) {
                     Text(groupedId(id.peerId.value), style = MonoSmall, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.75f))
@@ -133,7 +134,7 @@ fun YouTab(onBlocked: () -> Unit, onSecurity: () -> Unit, onAppearance: () -> Un
                 Box(Modifier.align(Alignment.TopEnd).padding(end = 16.dp)) {
                 DropdownMenu(timerMenu, onDismissRequest = { timerMenu = false }) {
                     ConvTimers.choices.forEach { t ->
-                        DropdownMenuItem(text = { Text(ConvTimers.label(t)) }, onClick = { timerMenu = false; update { it.copy(defaultTimer = t) } })
+                        DropdownMenuItem(text = { Text(ConvTimers.label(t)) }, onClick = tap { timerMenu = false; update { it.copy(defaultTimer = t) } })
                     }
                 }
                 }
@@ -143,7 +144,7 @@ fun YouTab(onBlocked: () -> Unit, onSecurity: () -> Unit, onAppearance: () -> Un
         }
         SettingsGroup("General") {
             SettingsRow("Back up and restore", "Move LibreChat to a new phone, sealed with a passphrase", Icons.Rounded.Backup, onClick = onBackup) { Chevron() }
-            SettingsRow("Appearance", "Theme, colours and black backgrounds", Icons.Rounded.Palette, onClick = onAppearance) { Chevron() }
+            SettingsRow("Look & feel", "Theme, colours, font, shapes and haptics", Icons.Rounded.Palette, onClick = onAppearance) { Chevron() }
             SettingsRow("About LibreChat", "Version, licences", Icons.Rounded.Info, onClick = onAbout) { Chevron() }
         }
         Text(
@@ -162,14 +163,14 @@ fun YouTab(onBlocked: () -> Unit, onSecurity: () -> Unit, onAppearance: () -> Un
                 PillTextField(value, { value = it.take(32) }, "Name", keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words))
             },
             confirmButton = {
-                TextButton(enabled = value.isNotBlank(), onClick = {
+                TextButton(enabled = value.isNotBlank(), onClick = tap {
                     editName = false
                     update { it.copy(name = value.trim()) }
                     scope.launch { AppGraph.messenger.announce() }
                     Toast.makeText(context, "People nearby see the new name with your next announcement", Toast.LENGTH_SHORT).show()
                 }) { Text("Save") }
             },
-            dismissButton = { TextButton(onClick = { editName = false }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = tap { editName = false }) { Text("Cancel") } },
         )
     }
 }

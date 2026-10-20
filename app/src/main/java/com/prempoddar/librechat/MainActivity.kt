@@ -28,6 +28,7 @@ class MainActivity : FragmentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        com.prempoddar.librechat.ui.design.Haptics.attach(window.decorView)
         enableEdgeToEdge()
         openRequest.value = intent.getStringExtra(EXTRA_CONVERSATION)
         setContent {

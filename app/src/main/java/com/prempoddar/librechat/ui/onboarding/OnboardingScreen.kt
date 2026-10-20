@@ -1,5 +1,6 @@
 package com.prempoddar.librechat.ui.onboarding
 
+import com.prempoddar.librechat.ui.design.tap
 import com.prempoddar.librechat.ui.design.PillTextField
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -90,7 +91,7 @@ private fun Page(eyebrow: String, title: String, body: String, content: @Composa
         Spacer(Modifier.height(24.dp))
         content()
         Spacer(Modifier.weight(1f).height(24.dp))
-        Button(onClick = onAction, enabled = enabled, modifier = Modifier.fillMaxWidth().height(54.dp)) { Text(action) }
+        Button(onClick = tap(onAction), enabled = enabled, modifier = Modifier.fillMaxWidth().height(54.dp)) { Text(action) }
     }
 }
 
@@ -108,7 +109,7 @@ private fun Welcome(onNext: () -> Unit) {
             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
         )
         Spacer(Modifier.weight(1f))
-        Button(onClick = onNext, modifier = Modifier.fillMaxWidth().height(54.dp)) { Text("Set up") }
+        Button(onClick = tap(onNext), modifier = Modifier.fillMaxWidth().height(54.dp)) { Text("Set up") }
     }
 }
 
@@ -178,7 +179,7 @@ private fun PermissionCard(title: String, body: String, granted: Boolean, onAllo
             Text(body, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         if (granted) Text("ON", style = MonoLabel, color = s.phosphor, modifier = Modifier.padding(horizontal = 12.dp))
-        else TextButton(onClick = onAllow) { Text("Allow") }
+        else TextButton(onClick = tap(onAllow)) { Text("Allow") }
     }
 }
 

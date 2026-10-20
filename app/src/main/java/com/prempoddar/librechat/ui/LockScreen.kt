@@ -1,5 +1,6 @@
 package com.prempoddar.librechat.ui
 
+import com.prempoddar.librechat.ui.design.tap
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -29,6 +30,6 @@ fun LockScreen(onUnlock: () -> Unit) {
             style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 8.dp, bottom = 24.dp),
         )
-        Button(onClick = onUnlock) { Text("Unlock") }
+        Button(onClick = tap(onUnlock)) { Text("Unlock") }
     }
 }

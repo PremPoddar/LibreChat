@@ -1,5 +1,6 @@
 package com.prempoddar.librechat.ui.groups
 
+import com.prempoddar.librechat.ui.design.tap
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.foundation.text.KeyboardOptions
 import com.prempoddar.librechat.ui.design.PillTextField
@@ -86,7 +87,7 @@ fun NewGroupScreen(onBack: () -> Unit, onCreated: (String) -> Unit) {
     val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(top = top)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back") }
+            IconButton(onClick = tap(onBack)) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back") }
             Text("New group", style = MaterialTheme.typography.titleLarge)
         }
         PillTextField(
@@ -104,7 +105,7 @@ fun NewGroupScreen(onBack: () -> Unit, onCreated: (String) -> Unit) {
         }
         Button(
             enabled = name.isNotBlank() && picked.isNotEmpty(),
-            onClick = {
+            onClick = tap {
                 scope.launch {
                     val gid = AppGraph.messenger.createGroup(name, picked.toList())
                     val t = AppGraph.settings.current().defaultTimer
@@ -134,20 +135,20 @@ fun GroupInfoScreen(groupId: String, onBack: () -> Unit, onOpenPerson: (String) 
     val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
 
     LazyColumn(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background), contentPadding = PaddingValues(top = top, bottom = 32.dp)) {
-        item { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back") } }
+        item { IconButton(onClick = tap(onBack)) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back") } }
         if (g == null) return@LazyColumn
         item {
             Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                 Avatar(g.name, ConvIds.group(g.id), 84.dp, group = true)
                 Text(g.name, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(top = 12.dp))
                 if (!g.active) Text("YOU'RE NO LONGER IN THIS GROUP", style = MonoLabel, color = s.danger, modifier = Modifier.padding(top = 6.dp))
-                if (admin) TextButton(onClick = { renaming = true }) { Text("Rename") }
+                if (admin) TextButton(onClick = tap { renaming = true }) { Text("Rename") }
             }
         }
         item {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 SectionLabel("Members · ${g.members.size}", Modifier.weight(1f))
-                if (admin) IconButton(onClick = { adding = true }, modifier = Modifier.padding(end = 8.dp, top = 12.dp)) { Icon(Icons.Rounded.PersonAdd, "Add members") }
+                if (admin) IconButton(onClick = tap { adding = true }, modifier = Modifier.padding(end = 8.dp, top = 12.dp)) { Icon(Icons.Rounded.PersonAdd, "Add members") }
             }
         }
         items(g.members, key = { it }) { id ->
@@ -163,13 +164,13 @@ fun GroupInfoScreen(groupId: String, onBack: () -> Unit, onOpenPerson: (String) 
                     if (id == g.admin) Text("ADMIN", style = MonoLabel, color = s.phosphor)
                 }
                 if (p?.verified == true) Icon(Icons.Rounded.Verified, "Verified", Modifier.size(16.dp), tint = s.phosphor)
-                if (admin && id != me) IconButton(onClick = { scope.launch { AppGraph.messenger.updateGroup(g.id, remove = listOf(id)) } }) {
+                if (admin && id != me) IconButton(onClick = tap { scope.launch { AppGraph.messenger.updateGroup(g.id, remove = listOf(id)) } }) {
                     Icon(Icons.Rounded.PersonRemove, "Remove ${p?.name ?: "member"}", tint = s.danger)
                 }
             }
         }
         if (g.active) item {
-            TextButton(onClick = { leaving = true }, modifier = Modifier.padding(16.dp)) { Text("Leave group", color = s.danger) }
+            TextButton(onClick = tap { leaving = true }, modifier = Modifier.padding(16.dp)) { Text("Leave group", color = s.danger) }
         }
     }
 
@@ -180,8 +181,8 @@ fun GroupInfoScreen(groupId: String, onBack: () -> Unit, onOpenPerson: (String) 
             onDismissRequest = { adding = false },
             title = { Text("Add members") },
             text = { LazyColumn(Modifier.heightIn(max = 400.dp)) { items(options, key = { it.peerId }) { p -> PickRow(p, p.peerId in picked) { if (p.peerId in picked) picked.remove(p.peerId) else picked.add(p.peerId) } } } },
-            confirmButton = { TextButton(enabled = picked.isNotEmpty(), onClick = { adding = false; scope.launch { AppGraph.messenger.updateGroup(g.id, add = picked.toList()) } }) { Text("Add") } },
-            dismissButton = { TextButton(onClick = { adding = false }) { Text("Cancel") } },
+            confirmButton = { TextButton(enabled = picked.isNotEmpty(), onClick = tap { adding = false; scope.launch { AppGraph.messenger.updateGroup(g.id, add = picked.toList()) } }) { Text("Add") } },
+            dismissButton = { TextButton(onClick = tap { adding = false }) { Text("Cancel") } },
         )
     }
     if (renaming && g != null) {
@@ -190,8 +191,8 @@ fun GroupInfoScreen(groupId: String, onBack: () -> Unit, onOpenPerson: (String) 
             onDismissRequest = { renaming = false },
             title = { Text("Rename group") },
             text = { PillTextField(value, { value = it.take(40) }, "Group name") },
-            confirmButton = { TextButton(enabled = value.isNotBlank(), onClick = { renaming = false; scope.launch { AppGraph.messenger.updateGroup(g.id, name = value) } }) { Text("Save") } },
-            dismissButton = { TextButton(onClick = { renaming = false }) { Text("Cancel") } },
+            confirmButton = { TextButton(enabled = value.isNotBlank(), onClick = tap { renaming = false; scope.launch { AppGraph.messenger.updateGroup(g.id, name = value) } }) { Text("Save") } },
+            dismissButton = { TextButton(onClick = tap { renaming = false }) { Text("Cancel") } },
         )
     }
     if (leaving && g != null) {
@@ -199,8 +200,8 @@ fun GroupInfoScreen(groupId: String, onBack: () -> Unit, onOpenPerson: (String) 
             onDismissRequest = { leaving = false },
             title = { Text("Leave ${g.name}?") },
             text = { Text("You'll stop receiving its messages. The others get new keys so they can't be read with yours.") },
-            confirmButton = { TextButton(onClick = { leaving = false; scope.launch { AppGraph.messenger.leaveGroup(g.id) } }) { Text("Leave", color = s.danger) } },
-            dismissButton = { TextButton(onClick = { leaving = false }) { Text("Cancel") } },
+            confirmButton = { TextButton(onClick = tap { leaving = false; scope.launch { AppGraph.messenger.leaveGroup(g.id) } }) { Text("Leave", color = s.danger) } },
+            dismissButton = { TextButton(onClick = tap { leaving = false }) { Text("Cancel") } },
         )
     }
 }

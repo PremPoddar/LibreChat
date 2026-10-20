@@ -1,5 +1,6 @@
 package com.prempoddar.librechat.ui.search
 
+import com.prempoddar.librechat.ui.design.tap
 import androidx.compose.ui.Alignment
 import androidx.compose.material.icons.rounded.Search
 import com.prempoddar.librechat.ui.design.PillTextField
@@ -50,7 +51,7 @@ fun SearchScreen(onBack: () -> Unit, onOpenChat: (String) -> Unit) {
     val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(top = top)) {
         Row(Modifier.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back") }
+            IconButton(onClick = tap(onBack)) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back") }
             PillTextField(
                 q, { q = it }, "Search messages", Modifier.weight(1f).padding(end = 12.dp).focusRequester(focus),
                 leading = Icons.Rounded.Search,

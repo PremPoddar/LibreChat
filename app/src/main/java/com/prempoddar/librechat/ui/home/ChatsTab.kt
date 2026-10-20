@@ -1,5 +1,6 @@
 package com.prempoddar.librechat.ui.home
 
+import com.prempoddar.librechat.ui.design.tap
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -85,12 +86,12 @@ fun ChatsTab(onOpenChat: (String) -> Unit, onNewGroup: () -> Unit, onSearch: () 
                         Text(if (showRequests) "Requests" else "LibreChat", style = MaterialTheme.typography.headlineMedium)
                         MeshChip(Modifier.padding(top = 6.dp))
                     }
-                    IconButton(onClick = onSearch) { Icon(Icons.Rounded.Search, contentDescription = "Search messages") }
+                    IconButton(onClick = tap(onSearch)) { Icon(Icons.Rounded.Search, contentDescription = "Search messages") }
                 }
             }
             if (requests.isNotEmpty() || showRequests) {
                 item {
-                    TextButton(onClick = { showRequests = !showRequests }, modifier = Modifier.padding(start = 8.dp, top = 8.dp)) {
+                    TextButton(onClick = tap { showRequests = !showRequests }, modifier = Modifier.padding(start = 8.dp, top = 8.dp)) {
                         Text(if (showRequests) "← Back to chats" else "${requests.size} message request${if (requests.size > 1) "s" else ""}")
                     }
                 }
@@ -110,7 +111,7 @@ fun ChatsTab(onOpenChat: (String) -> Unit, onNewGroup: () -> Unit, onSearch: () 
             }
         }
         ExtendedFloatingActionButton(
-            onClick = { sheet = true },
+            onClick = tap { sheet = true },
             icon = { Icon(Icons.Outlined.Edit, null) }, text = { Text("New") },
             containerColor = MaterialTheme.colorScheme.primaryContainer, contentColor = LocalSignal.current.phosphor,
             modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
@@ -176,16 +177,16 @@ private fun ConversationRow(c: Conversation, onOpen: (String) -> Unit) {
         }
         DropdownMenu(menu, onDismissRequest = { menu = false }) {
             val update = { f: (Conversation) -> Conversation -> scope.launch { AppGraph.dao.putConversation(f(c).toEntity()) }; menu = false }
-            DropdownMenuItem(text = { Text(if (c.pinned) "Unpin" else "Pin") }, onClick = { update { it.copy(pinned = !it.pinned) } })
+            DropdownMenuItem(text = { Text(if (c.pinned) "Unpin" else "Pin") }, onClick = tap { update { it.copy(pinned = !it.pinned) } })
             if (muted) {
-                DropdownMenuItem(text = { Text("Unmute") }, onClick = { update { it.copy(mutedUntil = 0) } })
+                DropdownMenuItem(text = { Text("Unmute") }, onClick = tap { update { it.copy(mutedUntil = 0) } })
             } else {
-                DropdownMenuItem(text = { Text("Mute for 8 hours") }, onClick = { update { it.copy(mutedUntil = now + 8 * 3_600_000L) } })
-                DropdownMenuItem(text = { Text("Mute for a week") }, onClick = { update { it.copy(mutedUntil = now + 7 * 86_400_000L) } })
-                DropdownMenuItem(text = { Text("Mute always") }, onClick = { update { it.copy(mutedUntil = Long.MAX_VALUE) } })
+                DropdownMenuItem(text = { Text("Mute for 8 hours") }, onClick = tap { update { it.copy(mutedUntil = now + 8 * 3_600_000L) } })
+                DropdownMenuItem(text = { Text("Mute for a week") }, onClick = tap { update { it.copy(mutedUntil = now + 7 * 86_400_000L) } })
+                DropdownMenuItem(text = { Text("Mute always") }, onClick = tap { update { it.copy(mutedUntil = Long.MAX_VALUE) } })
             }
-            DropdownMenuItem(text = { Text("Clear history") }, onClick = { menu = false; confirm = "clear" })
-            if (c.kind != ConvKind.PUBLIC) DropdownMenuItem(text = { Text("Delete chat") }, onClick = { menu = false; confirm = "delete" })
+            DropdownMenuItem(text = { Text("Clear history") }, onClick = tap { menu = false; confirm = "clear" })
+            if (c.kind != ConvKind.PUBLIC) DropdownMenuItem(text = { Text("Delete chat") }, onClick = tap { menu = false; confirm = "delete" })
         }
     }
     confirm?.let { what ->
@@ -194,7 +195,7 @@ private fun ConversationRow(c: Conversation, onOpen: (String) -> Unit) {
             title = { Text(if (what == "clear") "Clear history?" else "Delete this chat?") },
             text = { Text("This removes the messages from this phone only. Others keep their copies.") },
             confirmButton = {
-                TextButton(onClick = {
+                TextButton(onClick = tap {
                     confirm = null
                     scope.launch {
                         AppGraph.dao.mediaIn(c.id).forEach { m -> m.mediaPath?.let(AppGraph.files::delete) }
@@ -204,7 +205,7 @@ private fun ConversationRow(c: Conversation, onOpen: (String) -> Unit) {
                     }
                 }) { Text(if (what == "clear") "Clear" else "Delete", color = s.danger) }
             },
-            dismissButton = { TextButton(onClick = { confirm = null }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = tap { confirm = null }) { Text("Cancel") } },
         )
     }
 }

@@ -1,5 +1,6 @@
 package com.prempoddar.librechat.ui.chat
 
+import com.prempoddar.librechat.ui.design.tap
 import com.prempoddar.librechat.engine.Messenger
 import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.AttachFile
@@ -203,7 +204,7 @@ private fun Header(
         modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface).padding(end = 4.dp, top = 4.dp, bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back") }
+        IconButton(onClick = tap(onBack)) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back") }
         Row(
             Modifier.weight(1f).clip(MaterialTheme.shapes.small).clickable {
                 when (kind) {
@@ -252,23 +253,23 @@ private fun Header(
             Icon(Icons.Rounded.Timer, "Disappearing: ${ConvTimers.label(conv!!.timerSeconds)}", tint = s.amber, modifier = Modifier.padding(end = 4.dp).size(20.dp))
         }
         Box {
-            IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, "Chat options") }
+            IconButton(onClick = tap { menu = true }) { Icon(Icons.Rounded.MoreVert, "Chat options") }
             DropdownMenu(menu, onDismissRequest = { menu = false }) {
-                if (kind == ConvKind.DIRECT && person != null) DropdownMenuItem(text = { Text("Profile & verify") }, onClick = { menu = false; onOpenPerson(person.peerId) })
-                if (kind == ConvKind.GROUP) DropdownMenuItem(text = { Text("Group info") }, onClick = { menu = false; onGroupInfo(ConvIds.groupOf(convId)) })
-                if (kind != ConvKind.PUBLIC) DropdownMenuItem(text = { Text("Disappearing messages") }, onClick = { menu = false; timerDialog = true })
+                if (kind == ConvKind.DIRECT && person != null) DropdownMenuItem(text = { Text("Profile & verify") }, onClick = tap { menu = false; onOpenPerson(person.peerId) })
+                if (kind == ConvKind.GROUP) DropdownMenuItem(text = { Text("Group info") }, onClick = tap { menu = false; onGroupInfo(ConvIds.groupOf(convId)) })
+                if (kind != ConvKind.PUBLIC) DropdownMenuItem(text = { Text("Disappearing messages") }, onClick = tap { menu = false; timerDialog = true })
                 conv?.let { cv ->
                     val muted = cv.mutedUntil > now
-                    DropdownMenuItem(text = { Text(if (muted) "Unmute" else "Mute") }, onClick = {
+                    DropdownMenuItem(text = { Text(if (muted) "Unmute" else "Mute") }, onClick = tap {
                         menu = false
                         scope.launch { AppGraph.dao.putConversation(cv.copy(mutedUntil = if (muted) 0 else Long.MAX_VALUE).toEntity()) }
                     })
-                    DropdownMenuItem(text = { Text(if (cv.pinned) "Unpin" else "Pin") }, onClick = {
+                    DropdownMenuItem(text = { Text(if (cv.pinned) "Unpin" else "Pin") }, onClick = tap {
                         menu = false
                         scope.launch { AppGraph.dao.putConversation(cv.copy(pinned = !cv.pinned).toEntity()) }
                     })
                 }
-                if (kind == ConvKind.DIRECT && person != null) DropdownMenuItem(text = { Text("Block", color = s.danger) }, onClick = { menu = false; blockDialog = true })
+                if (kind == ConvKind.DIRECT && person != null) DropdownMenuItem(text = { Text("Block", color = s.danger) }, onClick = tap { menu = false; blockDialog = true })
             }
         }
     }
@@ -290,7 +291,7 @@ private fun Header(
                     }
                 }
             },
-            confirmButton = { TextButton(onClick = { timerDialog = false }) { Text("Close") } },
+            confirmButton = { TextButton(onClick = tap { timerDialog = false }) { Text("Close") } },
         )
     }
     if (blockDialog && person != null) {
@@ -298,8 +299,8 @@ private fun Header(
             onDismissRequest = { blockDialog = false },
             title = { Text("Block ${person.name}?") },
             text = { Text("Their messages and requests are dropped. Your phone still relays their packets for others, unread.") },
-            confirmButton = { TextButton(onClick = { blockDialog = false; scope.launch { AppGraph.messenger.block(person.peerId) } }) { Text("Block", color = s.danger) } },
-            dismissButton = { TextButton(onClick = { blockDialog = false }) { Text("Cancel") } },
+            confirmButton = { TextButton(onClick = tap { blockDialog = false; scope.launch { AppGraph.messenger.block(person.peerId) } }) { Text("Block", color = s.danger) } },
+            dismissButton = { TextButton(onClick = tap { blockDialog = false }) { Text("Cancel") } },
         )
     }
 }
@@ -315,8 +316,8 @@ private fun RequestBar(person: Person) {
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Row(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = { scope.launch { AppGraph.messenger.accept(person.peerId) } }) { Text("Accept") }
-            OutlinedButton(onClick = { scope.launch { AppGraph.messenger.block(person.peerId) } }) { Text("Block", color = s.danger) }
+            Button(onClick = tap { scope.launch { AppGraph.messenger.accept(person.peerId) } }) { Text("Accept") }
+            OutlinedButton(onClick = tap { scope.launch { AppGraph.messenger.block(person.peerId) } }) { Text("Block", color = s.danger) }
         }
     }
 }
@@ -491,7 +492,7 @@ private fun VoiceContent(m: ChatMessage) {
         val path = media.path
         IconButton(
             enabled = path != null,
-            onClick = { if (path != null) playing = VoicePlayer.toggle(path) { playing = false } },
+            onClick = tap { if (path != null) playing = VoicePlayer.toggle(path) { playing = false } },
             modifier = Modifier.size(40.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer),
         ) { Icon(if (playing) Icons.Rounded.Pause else Icons.Rounded.PlayArrow, if (playing) "Pause" else "Play voice note", tint = s.phosphor) }
         Gap(w = 10.dp)
@@ -618,22 +619,22 @@ private fun Composer(convId: String, kind: ConvKind, replyTo: ChatMessage?, name
                     Text("Replying to ${if (r.mine) "yourself" else names[r.sender] ?: "them"}", style = MaterialTheme.typography.labelMedium, color = s.phosphor)
                     Text(r.text.ifEmpty { if (r.kind == MsgKind.PHOTO) "📷 Photo" else "🎤 Voice note" }, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
-                IconButton(onClick = onClearReply) { Icon(Icons.Rounded.Close, "Cancel reply") }
+                IconButton(onClick = tap(onClearReply)) { Icon(Icons.Rounded.Close, "Cancel reply") }
             }
         }
         Row(Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 6.dp), verticalAlignment = Alignment.Bottom) {
             if (!recording) {
                 Box {
-                    IconButton(onClick = { photoMenu = true }) { Icon(Icons.Rounded.AddCircle, "Send a photo or file") }
+                    IconButton(onClick = tap { photoMenu = true }) { Icon(Icons.Rounded.AddCircle, "Send a photo or file") }
                     DropdownMenu(photoMenu, onDismissRequest = { photoMenu = false }) {
-                        DropdownMenuItem(text = { Text("Gallery") }, leadingIcon = { Icon(Icons.Rounded.PhotoLibrary, null) }, onClick = {
+                        DropdownMenuItem(text = { Text("Gallery") }, leadingIcon = { Icon(Icons.Rounded.PhotoLibrary, null) }, onClick = tap {
                             photoMenu = false; pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
                         })
-                        DropdownMenuItem(text = { Text("Take a photo") }, leadingIcon = { Icon(Icons.Rounded.PhotoCamera, null) }, onClick = {
+                        DropdownMenuItem(text = { Text("Take a photo") }, leadingIcon = { Icon(Icons.Rounded.PhotoCamera, null) }, onClick = tap {
                             photoMenu = false
                             if (Permissions.has(context, Manifest.permission.CAMERA)) openCamera() else cameraPermission.launch(Manifest.permission.CAMERA)
                         })
-                        DropdownMenuItem(text = { Text("File") }, leadingIcon = { Icon(Icons.Rounded.AttachFile, null) }, onClick = {
+                        DropdownMenuItem(text = { Text("File") }, leadingIcon = { Icon(Icons.Rounded.AttachFile, null) }, onClick = tap {
                             photoMenu = false; pickFile.launch(arrayOf("*/*"))
                         })
                     }
@@ -663,7 +664,7 @@ private fun Composer(convId: String, kind: ConvKind, replyTo: ChatMessage?, name
             if (text.isNotBlank() || kind == ConvKind.PUBLIC) {
                 IconButton(
                     enabled = text.isNotBlank(),
-                    onClick = {
+                    onClick = tap {
                         val t = text.trim()
                         text = ""
                         val reply = replyTo?.id
