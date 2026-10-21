@@ -52,20 +52,7 @@ flowchart LR
     D -- signed receipt --> C --> B --> A
 ```
 
-```
- ┌───────────────── this phone ─────────────────┐
- │ UI (Compose) ── Room over SQLCipher           │
- │      │                                        │
- │ engine/Messenger   sessions, groups, receipts │
- │      │                                        │
- │ crypto/  X3DH · Double Ratchet · Sender Keys  │
- │      │                                        │
- │ mesh/Router   dedupe · hop limit · store and  │
- │      │        forward · acknowledgements      │
- │ protocol/  Packet (protobuf) · BLE framing    │
- └──────┼────────────────────────────┼───────────┘
-   BLE GATT (server + client)   Wi-Fi Aware data path
-```
+<p align="center"><img src=".github/assets/architecture.png" alt="The layers inside each phone, from the UI down to Bluetooth and Wi-Fi Aware" width="100%"></p>
 
 ### The mesh
 
@@ -98,6 +85,10 @@ What relays can see: the sender and recipient mesh ids (or the group id), sizes 
 
 > **This implementation has not had an independent security audit.** It is tested against the RFC test
 > vectors for every primitive and with end to end tests of every flow (see below).
+
+## 🗂️ Project layout
+
+<p align="center"><img src=".github/assets/modules.png" alt="LibreChat source packages and what each one does" width="100%"></p>
 
 ## 🔐 Permissions and privacy
 
