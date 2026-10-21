@@ -42,6 +42,9 @@
       <a href="https://github.com/PremPoddar/LibreChat" class="btn-ghost"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.87-1.37-3.87-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.42-2.69 5.39-5.25 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></svg> View the source</a>
     </div>
     <p class="micro fade-up d3">End-to-end encrypted · works with zero bars</p>
+    <div class="play fade-up d3" id="play"><div class="play-head"><span class="play-title">Build your own mesh</span><span class="play-tag">tap to add phones</span></div>
+<canvas id="lmCanvas" height="220"></canvas>
+<div class="lm-foot"><span id="lmStatus">Tap anywhere to drop a phone. A letter is waiting to get from 🙂 to 😺.</span><button class="play-btn ghost" id="lmReset">Clear</button></div></div>
   </div>
 </header>
 
@@ -139,6 +142,18 @@
 #lcMesh text{fill:var(--muted);font:500 10px var(--mono);text-anchor:middle}
 #lcMesh .pkt{fill:var(--accent-3);filter:drop-shadow(0 0 6px var(--accent))}
 .lc-btn{display:block;margin:10px auto 0;font:600 14px var(--body);color:var(--on-accent);background:linear-gradient(135deg,var(--accent),var(--accent-2));border:0;border-radius:999px;padding:11px 22px;cursor:pointer}
+
+.play{max-width:620px;margin:42px auto 0;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:26px;padding:20px 22px;position:relative;overflow:hidden}
+.play-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.play-title{font-family:var(--display);font-weight:700;font-size:1.05rem}
+.play-tag{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent)}
+.play-note{font-size:.88rem;color:var(--muted);margin-top:10px}
+.play-btn{font:600 14px var(--body);color:var(--on-accent);background:linear-gradient(135deg,var(--accent),var(--accent-2));border:0;border-radius:999px;padding:10px 18px;cursor:pointer;transition:transform .15s}
+.play-btn:active{transform:scale(.95)}
+.play-btn.ghost{color:var(--text);background:var(--card-hover);border:1px solid var(--line)}
+
+#lmCanvas{width:100%;height:220px;display:block;border-radius:18px;background:radial-gradient(circle at 50% 40%,rgba(75,224,142,.08),transparent 70%),rgba(0,0,0,.25);cursor:crosshair;touch-action:manipulation}
+.lm-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:10px;font-size:.88rem;color:var(--muted)}
 </style>
 <script>
 const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.12});
@@ -165,6 +180,27 @@ async function send(from,to){if(busy)return;busy=true;lines.forEach(l=>l.classLi
   nodes[p[i+1]].classList.add('lit');lcStatus.textContent=`hop ${i+1} of ${p.length-1}`}
  pkt.style.opacity=0;lcStatus.textContent=`delivered ✓✓ · ${p.length-1} hops`;busy=false}
 lcSend.onclick=()=>send(0,8);setTimeout(()=>send(0,8),1200);
+</script>
+<script>
+(()=>{const c=lmCanvas,x=c.getContext('2d');let W,H,R=110,ph=[],msg=null,dpr=devicePixelRatio||1;
+function size(){W=c.clientWidth;H=220;c.width=W*dpr;c.height=H*dpr;x.setTransform(dpr,0,0,dpr,0,0)}
+function reset(){size();ph=[{x:40,y:H/2,e:'🙂'},{x:W-40,y:H/2,e:'😺'}];msg={at:0,path:null,t:0,done:false};lmStatus.textContent='Tap anywhere to drop a phone. A letter is waiting to get from 🙂 to 😺.'}
+function links(){const L=[];for(let i=0;i<ph.length;i++)for(let j=i+1;j<ph.length;j++)if(Math.hypot(ph[i].x-ph[j].x,ph[i].y-ph[j].y)<R)L.push([i,j]);return L}
+function path(L){const prev={0:-1},q=[0];while(q.length){const n=q.shift();if(n===1)break;L.forEach(([a,b])=>{[[a,b],[b,a]].forEach(([p,c2])=>{if(p===n&&!(c2 in prev)){prev[c2]=n;q.push(c2)}})})}
+ if(!(1 in prev))return null;const out=[];for(let n=1;n!==-1;n=prev[n])out.unshift(n);return out}
+c.addEventListener('click',e=>{const r=c.getBoundingClientRect();ph.push({x:e.clientX-r.left,y:e.clientY-r.top,e:'📱',born:performance.now()});if(msg.done)msg={at:0,path:null,t:0,done:false}});
+lmReset.onclick=reset;addEventListener('resize',()=>{const old=W;size();ph.forEach(p=>p.x*=W/old)});
+function frame(t){x.clearRect(0,0,W,H);const L=links();
+ L.forEach(([a,b])=>{x.strokeStyle='rgba(75,224,142,.35)';x.lineWidth=2;x.beginPath();x.moveTo(ph[a].x,ph[a].y);x.lineTo(ph[b].x,ph[b].y);x.stroke()});
+ ph.forEach((p,i)=>{const pop=p.born?Math.min(1,(t-p.born)/250):1;x.beginPath();x.fillStyle=i<2?'rgba(75,224,142,.25)':'rgba(255,255,255,.06)';x.arc(p.x,p.y,R/2*0+18*pop,0,7);x.fill();
+  x.strokeStyle='rgba(75,224,142,.10)';x.beginPath();x.arc(p.x,p.y,R/2,0,7);x.stroke();x.font=`${20*pop}px system-ui`;x.textAlign='center';x.textBaseline='middle';x.fillText(p.e,p.x,p.y)});
+ if(!msg.done){if(!msg.path){msg.path=path(L);if(msg.path){msg.at=0;msg.t=0;lmStatus.textContent=`Path found! Hopping across ${msg.path.length-1} link${msg.path.length>2?'s':''}…`}
+   else if(ph.length>2)lmStatus.textContent='No path yet — the letter waits, just like LibreChat holds messages. Add more phones!'}
+  if(msg.path){msg.t+=0.03;if(msg.t>=1){msg.t=0;msg.at++;if(msg.at>=msg.path.length-1){msg.done=true;lmStatus.textContent=`Delivered ✓✓ in ${msg.path.length-1} hop${msg.path.length>2?'s':''}. Tap to send another.`}}
+   if(!msg.done){const a=ph[msg.path[msg.at]],b=ph[msg.path[msg.at+1]];x.font='18px system-ui';x.fillText('✉️',a.x+(b.x-a.x)*msg.t,a.y+(b.y-a.y)*msg.t-2)}}
+  else{x.font='16px system-ui';x.fillText('✉️',ph[0].x,ph[0].y-26+Math.sin(t/300)*3)}}
+ requestAnimationFrame(frame)}
+reset();requestAnimationFrame(frame);})();
 </script>
 </body>
 </html>
