@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>LibreChat — Privacy policy</title>
+<meta name="description" content="How LibreChat handles your data." />
+<meta property="og:title" content="LibreChat — Privacy policy" />
+<meta property="og:description" content="How LibreChat handles your data." />
+<meta property="og:type" content="website" />
+<meta name="theme-color" content="#060A08" />
+<link rel="icon" href="../icon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="../site.css" />
+<style>:root{--bg:#060A08;--bg-2:#0B130F;--text:#EAF4EE;--muted:#90A398;--soft:#CDDCD3;--accent:#4BE08E;--accent-2:#16A85C;--accent-3:#B6F7D2;--on-accent:#03140A;--accent-glow:rgba(75,224,142,.38);--accent-soft:rgba(75,224,142,.14);--accent-line:rgba(75,224,142,.30);--glow-1:rgba(75,224,142,.17);--glow-2:rgba(75,224,142,.10);--glow-3:rgba(255,255,255,.035);--gridline:rgba(255,255,255,.025);--nav:rgba(10,10,12,.55);--line:rgba(255,255,255,.08);--line-strong:rgba(255,255,255,.22);--card:rgba(255,255,255,.04);--card-hover:rgba(255,255,255,.065);--ico-bg:rgba(75,224,142,.16);--display:"Space Grotesk",system-ui,sans-serif;--body:"IBM Plex Sans",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace;}</style>
+</head>
+<body>
+<div class="bg-glow"></div>
+<div class="bg-grid"></div>
+<nav>
+  <div class="wrap">
+    <a class="brand" href="../"><img src="../icon.svg" alt="" />LibreChat</a>
+    <div class="nav-links">
+      <a href="../#features">Features</a>
+      <a href="../#how">How it works</a>
+      <a href="../privacy/">Privacy</a>
+      <a href="../#download" class="nav-cta">Download</a>
+    </div>
+  </div>
+</nav>
+<main class="prose">
+  <p class="eyebrow">Privacy policy</p>
+  <h1>LibreChat and your data</h1>
+  <p class="updated">Last updated 22 October 2026</p>
+  <div class="summary"><p><b>In short:</b> LibreChat has no servers and no accounts. Messages travel between phones over Bluetooth and Wi-Fi Aware, private ones end-to-end encrypted, and everything is stored encrypted on your phone.</p></div>
+  <h2>What LibreChat collects</h2><p>Nothing. There is no server, account, analytics or advertising. The developer never receives any of your data.</p><h2>Your identity</h2><p>Your phone creates its own keys. Your name and public keys are announced to phones nearby so they can reach you and verify messages are from you.</p><h2>Messages</h2><ul><li>Direct and group messages are end-to-end encrypted. Phones that relay them can’t read them.</li><li>Public chat is visible to everyone in range, as the name says, and signed so it can’t be forged.</li><li>Relaying phones keep an encrypted copy for up to 24 hours to deliver it, then delete it.</li></ul><h2>On your phone</h2><p>Messages, contacts and media are stored in an encrypted database, with keys protected by Android’s keystore. An optional app lock asks for your fingerprint, face or screen lock.</p>
+  <h2>Permissions</h2>
+  <p>What LibreChat asks Android for, and why:</p>
+  <table><thead><tr><th>Permission</th><th>Why</th></tr></thead><tbody><tr><td>Bluetooth (scan, advertise, connect)</td><td>To find nearby phones and pass messages between them.</td></tr><tr><td>Location (Android 11 and older)</td><td>Android requires it there for Bluetooth scanning. LibreChat never reads your location.</td></tr><tr><td>Nearby Wi-Fi devices</td><td>For Wi-Fi Aware, which moves photos and voice notes quickly between phones side by side.</td></tr><tr><td>Internet</td><td>Android requires it to open the local Wi-Fi Aware link. LibreChat never contacts a server.</td></tr><tr><td>Microphone &amp; camera</td><td>To record voice notes, take photos and scan verification codes — only when you use them.</td></tr><tr><td>Notifications, run at start</td><td>To tell you about new messages and keep the mesh running in the background.</td></tr><tr><td>Biometrics</td><td>Only for the optional app lock.</td></tr></tbody></table>
+  <h2>Children</h2><p>LibreChat isn't aimed at children and collects nothing from anyone.</p>
+  <h2>Changes</h2><p>If this policy changes, the new version is published here and in the app's
+  <a class="text-link" href="https://github.com/PremPoddar/LibreChat">source repository</a>, where every change can be seen.</p>
+  <h2>Contact</h2><p>Questions or concerns: open an issue at
+  <a class="text-link" href="https://github.com/PremPoddar/LibreChat/issues">github.com/PremPoddar/LibreChat/issues</a>.</p>
+</main>
+<footer>
+  <div class="wrap">
+    <a class="brand" href="../"><img src="../icon.svg" alt="" style="width:26px;height:26px;border-radius:7px" />LibreChat</a>
+    <div class="foot-note">Made for festivals, trails and power cuts.</div>
+    <div class="links">
+      <a href="../privacy/">Privacy</a>
+      <a href="https://github.com/PremPoddar/LibreChat">Source</a>
+      <a href="https://github.com/PremPoddar/LibreChat/issues">Report a problem</a>
+      <a href="https://github.com/PremPoddar">More apps</a>
+    </div>
+  </div>
+</footer>
+</body>
+</html>
