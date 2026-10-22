@@ -40,6 +40,9 @@ class Router(
         linkPeer.remove(link)
     }
 
+    /** The neighbour on [link], once it has announced itself. */
+    @Synchronized fun peerOn(link: String): String? = linkPeer[link]
+
     /** Peer id → its links, for neighbours that announced themselves directly. */
     @Synchronized fun neighbours(): Map<String, List<String>> =
         linkPeer.entries.filter { it.key in links }.groupBy({ it.value }, { it.key })

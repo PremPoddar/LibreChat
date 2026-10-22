@@ -82,19 +82,29 @@ fun SignalGlyph(hops: Int, rssi: Int?, modifier: Modifier = Modifier) {
 
 /** Initials in a ring; the ring is green while the person is reachable right now. */
 @Composable
-fun Avatar(name: String, seed: String, size: Dp = 44.dp, live: Boolean = false, group: Boolean = false) {
+fun Avatar(name: String, seed: String, size: Dp = 44.dp, live: Boolean = false, group: Boolean = false, online: Boolean? = null) {
     val s = LocalSignal.current
     val hue = (seed.hashCode().toLong() and 0xFFFF).toFloat() / 0xFFFF * 360f
     val tint = Color.hsl(hue, 0.35f, 0.42f)
-    Box(
-        Modifier.size(size).clip(if (group) RoundedCornerShape(size / 3.2f) else CircleShape).background(tint.copy(alpha = 0.22f))
-            .border(1.5.dp, if (live) s.phosphor else Color.Transparent, if (group) RoundedCornerShape(size / 3.2f) else CircleShape),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            initials(name), fontFamily = Mono, fontWeight = FontWeight(600), fontSize = (size.value * 0.34f).sp,
-            color = MaterialTheme.colorScheme.onSurface,
-        )
+    Box(Modifier.size(size)) {
+        Box(
+            Modifier.size(size).clip(if (group) RoundedCornerShape(size / 3.2f) else CircleShape).background(tint.copy(alpha = 0.22f))
+                .border(1.5.dp, if (live) s.phosphor else Color.Transparent, if (group) RoundedCornerShape(size / 3.2f) else CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                initials(name), fontFamily = Mono, fontWeight = FontWeight(600), fontSize = (size.value * 0.34f).sp,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        }
+        // Green while they can be reached, grey while they can't.
+        if (online != null) {
+            val dot = size * 0.28f
+            Box(
+                Modifier.align(Alignment.BottomEnd).size(dot).clip(CircleShape).background(MaterialTheme.colorScheme.background).padding(dot * 0.18f)
+                    .clip(CircleShape).background(if (online) s.phosphor else s.faint),
+            )
+        }
     }
 }
 

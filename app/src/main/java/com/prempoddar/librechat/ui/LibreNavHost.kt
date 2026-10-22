@@ -64,6 +64,8 @@ fun LibreNavHost(onboarded: Boolean, openRequest: String?, onOpened: () -> Unit)
             ChatScreen(
                 convId = e.arguments!!.getString("id")!!, onBack = { nav.popBackStack() },
                 onOpenPerson = person, onGroupInfo = { nav.navigate("group/$it") },
+                // A chat moved to someone's new identity replaces the old one on the back stack.
+                onOpenChat = { id -> nav.navigate("chat/$id") { popUpTo("chat/{id}") { inclusive = true } } },
             )
         }
         composable("person/{id}") { e -> PersonScreen(e.arguments!!.getString("id")!!, onBack = { nav.popBackStack() }, onMessage = chat) }

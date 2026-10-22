@@ -64,6 +64,13 @@ class Messenger(
     /** My packets not yet handed to any link, and the message each belongs to. */
     private val unsent = HashMap<String, String>()
 
+    private val _relays = kotlinx.coroutines.flow.MutableStateFlow<Map<String, String>>(emptyMap())
+    /**
+     * For people heard through the mesh: the neighbour whose link their latest announcement came
+     * in on, the first hop on the way to them.
+     */
+    val relays: kotlinx.coroutines.flow.StateFlow<Map<String, String>> = _relays
+
     val me: String get() = identity.peerId.value
     val myIdentity: Identity get() = identity
 
@@ -133,7 +140,7 @@ class Messenger(
         }
         runCatching {
             when (p.type) {
-                PacketType.ANNOUNCE -> onAnnounce(p, announce!!)
+                PacketType.ANNOUNCE -> onAnnounce(p, announce!!, link)
                 PacketType.PUBLIC -> onPublic(p)
                 PacketType.DIRECT -> onDirect(p)
                 PacketType.GROUP -> onGroup(p)
@@ -143,8 +150,11 @@ class Messenger(
         }
     }
 
-    private suspend fun onAnnounce(p: Packet, a: Announce) {
+    private suspend fun onAnnounce(p: Packet, a: Announce, link: String) {
         val existing = store.person(p.sender)
+        val relay = router.peerOn(link)?.takeIf { p.ttl < Packet.DEFAULT_TTL && it != p.sender }
+        _relays.value = if (relay != null) _relays.value + (p.sender to relay) else _relays.value - p.sender
+        if (existing == null) noticeReinstall(p.sender, a.name)
         val person = (existing ?: Person(p.sender, a.identity, a.name)).copy(
             name = a.name,
             prekeyId = a.prekeyId,
@@ -158,6 +168,58 @@ class Messenger(
         store.conversation(ConvIds.direct(p.sender))?.let { if (it.title != a.name) store.saveConversation(it.copy(title = a.name)) }
         flushPending(p.sender)
     }
+
+    /**
+     * A brand-new identity with the same name as a contact who has gone quiet is most likely them
+     * after reinstalling LibreChat (a reinstall makes new keys). Their old chat says so and offers
+     * to move over; names aren't proof, so it's never done without the user.
+     */
+    private suspend fun noticeReinstall(newId: String, name: String) {
+        val now = clock()
+        val old = store.people().filter {
+            it.peerId != newId && it.peerId != me && it.name.equals(name, ignoreCase = true) &&
+                (it.state == PersonState.ACCEPTED || it.state == PersonState.REQUEST) &&
+                now - it.lastSeen > REINSTALL_QUIET_MS && store.conversation(ConvIds.direct(it.peerId)) != null
+        }.maxByOrNull { it.lastSeen } ?: return
+        if (store.successor(old.peerId) == newId) return
+        store.saveSuccessor(old.peerId, newId)
+        system(ConvIds.direct(old.peerId), "A phone called $name is nearby with a new identity, as happens after reinstalling LibreChat.")
+    }
+
+    /**
+     * Carries the chat with [old] over to their new identity [new] (see [noticeReinstall]), once the
+     * user is sure it's them. Anything still waiting for the old identity goes to the new one; what
+     * was already encrypted for the old keys can't be read by the new ones and is marked not sent.
+     */
+    suspend fun continueWith(old: String, new: String) = locked {
+        val person = store.person(new) ?: return@locked
+        val from = ConvIds.direct(old); val to = ConvIds.direct(new)
+        val was = store.conversation(from)
+        val there = store.conversation(to)
+        store.moveMessages(from, to)
+        val newer = if ((there?.lastActivity ?: 0) >= (was?.lastActivity ?: 0)) there else was
+        store.saveConversation(
+            (was ?: there ?: Conversation(to, ConvKind.DIRECT, person.name)).copy(
+                id = to, title = person.name, request = false,
+                unread = (was?.unread ?: 0) + (there?.unread ?: 0),
+                lastActivity = maxOf(was?.lastActivity ?: 0, there?.lastActivity ?: 0),
+                preview = newer?.preview.orEmpty(),
+            ),
+        )
+        if (was != null) store.deleteConversation(from)
+        store.savePerson(person.copy(state = PersonState.ACCEPTED))
+        store.outbox().filter { it.peer == old }.forEach { e ->
+            store.deleteOutbox(e.packetKey)
+            e.messageId?.let { id -> store.message(id)?.let { m -> if (m.status == MsgStatus.SENDING || m.status == MsgStatus.SENT) store.saveMessage(m.copy(status = MsgStatus.FAILED)) } }
+        }
+        store.pending(old).forEach { p -> store.addPending(new, p.content, p.messageId); store.deletePending(p.id) }
+        store.saveSuccessor(old, null)
+        system(to, "Chat moved to ${person.name}'s new identity. Compare safety numbers to be sure it's them.")
+        flushPending(new)
+    }
+
+    /** "That's not them": forget the suggestion. */
+    suspend fun keepSeparate(old: String) = locked { store.saveSuccessor(old, null) }
 
     private suspend fun onPublic(p: Packet) {
         val post = PublicPost.fromBytes(p.payload) ?: return
@@ -794,6 +856,8 @@ class Messenger(
         /** The public chat floods every phone in range, so it carries less: about 4 MB. */
         const val MAX_PUBLIC_CHUNKS = 500
         const val MAX_WAITING_GROUP = 500
+        /** A contact quiet for this long whose name turns up with new keys has probably reinstalled. */
+        const val REINSTALL_QUIET_MS = 2 * 60_000L
         const val RETRY_MS = 30_000L
         const val OUTBOX_FOR_MS = 24L * 60 * 60 * 1000
         const val MISSING_AFTER_MS = 60_000L

@@ -60,6 +60,10 @@ import com.prempoddar.librechat.engine.Conversation
 import com.prempoddar.librechat.ui.Data
 import com.prempoddar.librechat.ui.ago
 import com.prempoddar.librechat.ui.components.Avatar
+import com.prempoddar.librechat.ui.components.Reach
+import com.prempoddar.librechat.ui.components.rememberReach
+import com.prempoddar.librechat.engine.ConvIds
+import com.prempoddar.librechat.engine.Person
 import com.prempoddar.librechat.ui.components.Gap
 import com.prempoddar.librechat.ui.person.rememberContactScanner
 import com.prempoddar.librechat.ui.theme.LocalSignal
@@ -71,6 +75,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun ChatsTab(onOpenChat: (String) -> Unit, onNewGroup: () -> Unit, onSearch: () -> Unit, onNearby: () -> Unit) {
     val convs by Data.conversations().collectAsStateWithLifecycle(emptyList())
+    val people by Data.people().collectAsStateWithLifecycle(emptyList())
+    val byId = remember(people) { people.associateBy { it.peerId } }
     var showRequests by remember { mutableStateOf(false) }
     var sheet by remember { mutableStateOf(false) }
     val scan = rememberContactScanner()
@@ -96,7 +102,9 @@ fun ChatsTab(onOpenChat: (String) -> Unit, onNewGroup: () -> Unit, onSearch: () 
                     }
                 }
             }
-            items(shown, key = { it.id }) { c -> ConversationRow(c, onOpenChat) }
+            items(shown, key = { it.id }) { c ->
+                ConversationRow(c, if (c.kind == ConvKind.DIRECT) byId[ConvIds.peerOf(c.id)] else null, byId, onOpenChat)
+            }
             if (shown.size <= 1 && !showRequests) {
                 item {
                     Column(Modifier.padding(24.dp)) {
@@ -133,7 +141,7 @@ fun ChatsTab(onOpenChat: (String) -> Unit, onNewGroup: () -> Unit, onSearch: () 
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun ConversationRow(c: Conversation, onOpen: (String) -> Unit) {
+private fun ConversationRow(c: Conversation, person: Person?, people: Map<String, Person>, onOpen: (String) -> Unit) {
     val s = LocalSignal.current
     val scope = rememberCoroutineScope()
     var menu by remember { mutableStateOf(false) }
@@ -151,7 +159,7 @@ private fun ConversationRow(c: Conversation, onOpen: (String) -> Unit) {
                     Icon(Icons.Rounded.CellTower, null, tint = s.phosphor)
                 }
             } else {
-                Avatar(c.title, c.id, 48.dp, group = c.kind == ConvKind.GROUP)
+                Avatar(c.title, c.id, 48.dp, group = c.kind == ConvKind.GROUP, online = person?.let { rememberReach(it).online })
             }
             Gap(w = 14.dp)
             Column(Modifier.weight(1f)) {
@@ -160,6 +168,17 @@ private fun ConversationRow(c: Conversation, onOpen: (String) -> Unit) {
                     if (c.pinned) Icon(Icons.Rounded.PushPin, "Pinned", Modifier.padding(start = 6.dp).size(14.dp), tint = s.faint)
                     if (muted) Icon(Icons.Rounded.NotificationsOff, "Muted", Modifier.padding(start = 4.dp).size(14.dp), tint = s.faint)
                     if (c.timerSeconds > 0) Icon(Icons.Rounded.Timer, "Disappearing messages", Modifier.padding(start = 4.dp).size(14.dp), tint = s.faint)
+                    // How they're reached right now: straight to their phone, or hopping through others.
+                    person?.let { p ->
+                        when (val r = rememberReach(p)) {
+                            is Reach.Direct -> Text("  DIRECT", style = MonoSmall, color = s.phosphor, maxLines = 1)
+                            is Reach.Mesh -> Text(
+                                "  MESH" + (r.via?.let { " · VIA " + (people[it]?.name ?: "A PHONE").uppercase() } ?: ""),
+                                style = MonoSmall, color = s.amber, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                            )
+                            Reach.Away -> Unit
+                        }
+                    }
                 }
                 Text(
                     if (c.kind == ConvKind.PUBLIC && c.preview.isEmpty()) "Everyone in range can read this" else c.preview.ifEmpty { "No messages yet" },

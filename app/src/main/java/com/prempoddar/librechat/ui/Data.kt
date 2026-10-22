@@ -17,6 +17,9 @@ object Data {
     fun people(): Flow<List<Person>> = AppGraph.dao.observePeople().map { l -> l.map { it.toModel() } }
     fun person(id: String): Flow<Person?> = AppGraph.dao.observePerson(id).map { it?.toModel() }
     fun group(id: String): Flow<Group?> = AppGraph.dao.observeGroup(id).map { it?.toModel() }
+    /** The new identity [peer] seems to have moved to after reinstalling, if any. */
+    fun successor(peer: String): Flow<String?> =
+        AppGraph.dao.observeKv(com.prempoddar.librechat.data.RoomStore.successorKey(peer)).map { it?.value?.toString(Charsets.UTF_8) }
     fun search(q: String): Flow<List<ChatMessage>> =
         AppGraph.dao.search(q.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")).map { l -> l.map { it.toModel() } }
 }

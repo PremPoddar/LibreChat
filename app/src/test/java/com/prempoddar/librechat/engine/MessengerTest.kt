@@ -246,4 +246,57 @@ class MessengerTest {
         assertThat(c.store.people.keys).doesNotContain("0123456789abcdef")
         assertThat(b.store.people.keys).doesNotContain("0123456789abcdef")
     }
+
+    /** Asha deletes LibreChat and installs it again: same name, new identity. */
+    private suspend fun reinstall(): Triple<TestMesh.Phone, TestMesh.Phone, TestMesh.Phone> {
+        val a = net.phone("Asha"); val b = net.phone("Ben")
+        net.connect(a, b); net.announceAll(a, b)
+        a.messenger.sendText(ConvIds.direct(b.id), "hi Ben"); net.settle()
+        b.messenger.sendText(ConvIds.direct(a.id), "hey Asha"); net.settle()
+        net.disconnect(a, b)
+        net.now += 10 * 60_000
+        val a2 = net.phone("Asha")
+        net.connect(a2, b); net.announceAll(a2, b)
+        return Triple(a, b, a2)
+    }
+
+    @Test fun reinstalledPhoneAndOldContactCanTalk() = runTest {
+        val (_, b, a2) = reinstall()
+        a2.messenger.sendText(ConvIds.direct(b.id), "it's me again"); net.settle()
+        assertThat(b.store.inConv(ConvIds.direct(a2.id)).map { it.text }).contains("it's me again")
+        b.messenger.sendText(ConvIds.direct(a2.id), "welcome back"); net.settle()
+        assertThat(a2.store.inConv(ConvIds.direct(b.id)).map { it.text }).contains("welcome back")
+    }
+
+    @Test fun oldChatOffersToMoveToTheReinstalledPhone() = runTest {
+        val (a, b, a2) = reinstall()
+        assertThat(b.store.successor(a.id)).isEqualTo(a2.id)
+        // Something Ben wrote while the old Asha was gone, still waiting for her.
+        b.messenger.sendText(ConvIds.direct(a.id), "where are you?"); net.settle()
+
+        b.messenger.continueWith(a.id, a2.id); net.settle()
+        assertThat(b.store.conversations).doesNotContainKey(ConvIds.direct(a.id))
+        val moved = b.store.inConv(ConvIds.direct(a2.id)).map { it.text }
+        assertThat(moved).containsAtLeast("hi Ben", "hey Asha", "where are you?").inOrder()
+        assertThat(b.store.people[a2.id]!!.state).isEqualTo(PersonState.ACCEPTED)
+        assertThat(b.store.successor(a.id)).isNull()
+
+        b.messenger.sendText(ConvIds.direct(a2.id), "welcome back"); net.settle()
+        assertThat(a2.store.inConv(ConvIds.direct(b.id)).map { it.text }).contains("welcome back")
+    }
+
+    @Test fun aSecondPhoneWithTheSameNameWhileTheFirstIsAroundIsNotAReinstall() = runTest {
+        val a = net.phone("Asha"); val b = net.phone("Ben")
+        net.connect(a, b); net.announceAll(a, b)
+        b.messenger.sendText(ConvIds.direct(a.id), "hey"); net.settle()
+        val other = net.phone("Asha")
+        net.connect(other, b); net.announceAll(other, b)
+        assertThat(b.store.successor(a.id)).isNull()
+    }
+
+    @Test fun relaysAreRemembered() = runTest {
+        val (a, b, c) = line()
+        assertThat(a.messenger.relays.value[c.id]).isEqualTo(b.id)
+        assertThat(a.messenger.relays.value).doesNotContainKey(b.id)
+    }
 }

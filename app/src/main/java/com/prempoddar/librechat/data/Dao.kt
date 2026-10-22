@@ -10,11 +10,14 @@ import kotlinx.coroutines.flow.Flow
 interface ChatDao {
     @Query("SELECT * FROM kv WHERE `key` = :key") suspend fun kv(key: String): KeyValueEntity?
     @Upsert suspend fun putKv(e: KeyValueEntity)
+    @Query("SELECT * FROM kv WHERE `key` = :key") fun observeKv(key: String): Flow<KeyValueEntity?>
+    @Query("DELETE FROM kv WHERE `key` = :key") suspend fun deleteKv(key: String)
 
     @Query("SELECT * FROM people WHERE peerId = :id") suspend fun person(id: String): PersonEntity?
     @Query("SELECT * FROM people WHERE peerId = :id") fun observePerson(id: String): Flow<PersonEntity?>
     @Query("SELECT * FROM people ORDER BY lastSeen DESC") fun observePeople(): Flow<List<PersonEntity>>
     @Upsert suspend fun putPerson(e: PersonEntity)
+    @Query("SELECT * FROM people") suspend fun people(): List<PersonEntity>
 
     @Query("SELECT * FROM sessions WHERE peer = :peer") suspend fun session(peer: String): SessionEntity?
     @Upsert suspend fun putSession(e: SessionEntity)
@@ -46,6 +49,7 @@ interface ChatDao {
     @Upsert suspend fun putMessage(e: MessageEntity)
     @Query("DELETE FROM messages WHERE id = :id") suspend fun deleteMessage(id: String)
     @Query("DELETE FROM messages WHERE convId = :conv") suspend fun clearConversation(conv: String)
+    @Query("UPDATE messages SET convId = :to WHERE convId = :from") suspend fun moveMessages(from: String, to: String)
 
     @Query("SELECT * FROM outbox") suspend fun outbox(): List<OutboxEntity>
     @Query("SELECT * FROM outbox WHERE packetKey = :key") suspend fun outboxEntry(key: String): OutboxEntity?

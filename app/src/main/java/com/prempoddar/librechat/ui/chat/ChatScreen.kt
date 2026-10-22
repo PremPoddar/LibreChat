@@ -116,6 +116,10 @@ import com.prempoddar.librechat.ui.ConvTimers
 import com.prempoddar.librechat.ui.Data
 import com.prempoddar.librechat.ui.clock
 import com.prempoddar.librechat.ui.components.Avatar
+import com.prempoddar.librechat.ui.components.Reach
+import com.prempoddar.librechat.ui.components.pathTo
+import com.prempoddar.librechat.ui.components.rememberReach
+import com.prempoddar.librechat.ui.ago
 import com.prempoddar.librechat.ui.components.Gap
 import com.prempoddar.librechat.ui.components.SignalGlyph
 import com.prempoddar.librechat.ui.components.Ticks
@@ -134,7 +138,7 @@ private val QUICK = listOf("👍", "❤️", "😂", "😮", "😢", "🔥")
 private const val DELETE_FOR_EVERYONE_MS = 24L * 60 * 60 * 1000
 
 @Composable
-fun ChatScreen(convId: String, onBack: () -> Unit, onOpenPerson: (String) -> Unit, onGroupInfo: (String) -> Unit) {
+fun ChatScreen(convId: String, onBack: () -> Unit, onOpenPerson: (String) -> Unit, onGroupInfo: (String) -> Unit, onOpenChat: (String) -> Unit = {}) {
     val kind = ConvIds.kind(convId)
     val conv by Data.conversation(convId).collectAsStateWithLifecycle(null)
     val messages by Data.messages(convId).collectAsStateWithLifecycle(emptyList())
@@ -163,6 +167,11 @@ fun ChatScreen(convId: String, onBack: () -> Unit, onOpenPerson: (String) -> Uni
     Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).imePadding()) {
         Header(convId, kind, c, person, group?.members?.size, onBack, onOpenPerson, onGroupInfo, Modifier.padding(top = top))
         if (c?.request == true && person != null) RequestBar(person!!)
+        if (kind == ConvKind.DIRECT) {
+            val old = ConvIds.peerOf(convId)
+            val successor by Data.successor(old).collectAsStateWithLifecycle(null)
+            successor?.let { new -> MovedBar(old, new, c?.title.orEmpty(), onOpenPerson, onMoved = { onOpenChat(ConvIds.direct(new)) }) }
+        }
 
         val byId = remember(messages) { messages.associateBy { it.id } }
         val listState = rememberLazyListState()
@@ -220,7 +229,7 @@ private fun Header(
                     Icon(Icons.Rounded.CellTower, null, tint = s.phosphor, modifier = Modifier.size(20.dp))
                 }
             } else {
-                Avatar(conv?.title ?: "", convId, 38.dp, live = person != null && now - person.lastSeen < 90_000, group = kind == ConvKind.GROUP)
+                Avatar(conv?.title ?: "", convId, 38.dp, group = kind == ConvKind.GROUP, online = person?.let { rememberReach(it).online })
             }
             Gap(w = 12.dp)
             Column(Modifier.weight(1f)) {
@@ -232,16 +241,19 @@ private fun Header(
                     ConvKind.DIRECT -> person?.let { p ->
                         val live = now - p.lastSeen < 90_000
                         // How messages reach them right now: straight to their phone, hopping through
-                        // others, or held until they're back in range.
+                        // others (and which), or held until they're back in range.
                         val near = status.neighbours[p.peerId]
-                        val (label, colour) = when {
-                            near != null -> (if (near.wifi) "DIRECT · WI-FI" else "DIRECT · BLUETOOTH") to s.phosphor
-                            live -> "VIA MESH · ${p.hops} HOP${if (p.hops == 1) "" else "S"}" to s.amber
-                            else -> "OUT OF RANGE · MESSAGES WAIT" to s.faint
+                        val reach = rememberReach(p)
+                        val people by Data.people().collectAsStateWithLifecycle(emptyList())
+                        val names = remember(people) { people.associate { it.peerId to it.name } }
+                        val (label, colour) = when (reach) {
+                            is Reach.Direct -> "${pathTo(reach, p.name, names)} · DIRECT · ${if (reach.wifi) "WI-FI" else "BLUETOOTH"}" to s.phosphor
+                            is Reach.Mesh -> "${pathTo(reach, p.name, names)} · MESH" to s.amber
+                            Reach.Away -> "OFFLINE · SEEN ${ago(p.lastSeen).uppercase()} · MESSAGES WAIT" to s.faint
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             SignalGlyph(if (live) p.hops else Int.MAX_VALUE, near?.rssi)
-                            Text("  $label", style = MonoSmall, color = colour)
+                            Text("  $label", style = MonoSmall, color = colour, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
                     }
                     ConvKind.GROUP -> Text("${members ?: 0} members", style = MonoSmall, color = s.faint)
@@ -302,6 +314,30 @@ private fun Header(
             confirmButton = { TextButton(onClick = tap { blockDialog = false; scope.launch { AppGraph.messenger.block(person.peerId) } }) { Text("Block", color = s.danger) } },
             dismissButton = { TextButton(onClick = tap { blockDialog = false }) { Text("Cancel") } },
         )
+    }
+}
+
+/**
+ * Someone with this chat's name turned up with new keys, as after reinstalling: offer to carry the
+ * chat over, but only on the user's word, since anyone can pick any name.
+ */
+@Composable
+private fun MovedBar(old: String, new: String, name: String, onOpenPerson: (String) -> Unit, onMoved: () -> Unit) {
+    val scope = rememberCoroutineScope()
+    val s = LocalSignal.current
+    Column(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant).padding(16.dp)) {
+        Text("Is this $name on a new install?", style = MaterialTheme.typography.titleSmall)
+        Text(
+            "A phone called $name is nearby with a new identity, which happens when LibreChat is reinstalled. " +
+                "Messages sent here go to the old identity and won't arrive. Move this chat over if you're sure it's them; " +
+                "compare safety numbers or scan their code to check.",
+            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Row(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(onClick = tap { scope.launch { AppGraph.messenger.continueWith(old, new); onMoved() } }) { Text("Move chat") }
+            OutlinedButton(onClick = tap { onOpenPerson(new) }) { Text("Check") }
+            TextButton(onClick = tap { scope.launch { AppGraph.messenger.keepSeparate(old) } }) { Text("Not them", color = s.faint) }
+        }
     }
 }
 

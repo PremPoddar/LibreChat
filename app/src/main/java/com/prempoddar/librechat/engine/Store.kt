@@ -15,6 +15,10 @@ interface EngineStore {
 
     suspend fun person(id: String): Person?
     suspend fun savePerson(person: Person)
+    suspend fun people(): List<Person>
+    /** The new identity someone seems to have moved to (after reinstalling), if any. */
+    suspend fun successor(peer: String): String?
+    suspend fun saveSuccessor(peer: String, successor: String?)
 
     suspend fun sessions(peer: String): SessionSet?
     suspend fun saveSessions(peer: String, sessions: SessionSet)
@@ -31,6 +35,9 @@ interface EngineStore {
 
     suspend fun conversation(id: String): Conversation?
     suspend fun saveConversation(conversation: Conversation)
+    suspend fun deleteConversation(id: String)
+    /** Moves every message of conversation [from] into [to]. */
+    suspend fun moveMessages(from: String, to: String)
 
     suspend fun message(id: String): ChatMessage?
     suspend fun saveMessage(message: ChatMessage)

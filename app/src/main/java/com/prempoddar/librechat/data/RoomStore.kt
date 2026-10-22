@@ -40,6 +40,10 @@ class RoomStore(private val dao: ChatDao, private val name: suspend () -> String
 
     override suspend fun person(id: String) = dao.person(id)?.toModel()
     override suspend fun savePerson(person: Person) = dao.putPerson(person.toEntity())
+    override suspend fun people() = dao.people().map { it.toModel() }
+    override suspend fun successor(peer: String) = dao.kv(successorKey(peer))?.value?.toString(Charsets.UTF_8)
+    override suspend fun saveSuccessor(peer: String, successor: String?) =
+        if (successor == null) dao.deleteKv(successorKey(peer)) else dao.putKv(KeyValueEntity(successorKey(peer), successor.toByteArray()))
 
     override suspend fun sessions(peer: String) = dao.session(peer)?.let { SessionSet.fromBytes(it.blob) }
     override suspend fun saveSessions(peer: String, sessions: SessionSet) = dao.putSession(SessionEntity(peer, sessions.toBytes()))
@@ -58,6 +62,8 @@ class RoomStore(private val dao: ChatDao, private val name: suspend () -> String
 
     override suspend fun conversation(id: String) = dao.conversation(id)?.toModel()
     override suspend fun saveConversation(conversation: Conversation) = dao.putConversation(conversation.toEntity())
+    override suspend fun deleteConversation(id: String) = dao.deleteConversation(id)
+    override suspend fun moveMessages(from: String, to: String) = dao.moveMessages(from, to)
 
     override suspend fun message(id: String) = dao.message(id)?.toModel()
     override suspend fun saveMessage(message: ChatMessage) = dao.putMessage(message.toEntity())
@@ -78,4 +84,8 @@ class RoomStore(private val dao: ChatDao, private val name: suspend () -> String
     override suspend fun pending(peer: String) = dao.pending(peer).map { PendingContent(it.id, it.peer, it.content, it.messageId) }
     override suspend fun addPending(peer: String, content: ByteArray, messageId: String?) = dao.putPending(PendingEntity(peer = peer, content = content, messageId = messageId))
     override suspend fun deletePending(id: Long) = dao.deletePending(id)
+
+    companion object {
+        fun successorKey(peer: String) = "successor:$peer"
+    }
 }

@@ -27,6 +27,10 @@ class InMemoryStore(private val name: String) : EngineStore {
     override suspend fun myName() = name
     override suspend fun person(id: String) = people[id]
     override suspend fun savePerson(person: Person) { people[person.peerId] = person }
+    override suspend fun people() = people.values.toList()
+    private val successors = HashMap<String, String>()
+    override suspend fun successor(peer: String) = successors[peer]
+    override suspend fun saveSuccessor(peer: String, successor: String?) { if (successor == null) successors.remove(peer) else successors[peer] = successor }
     override suspend fun sessions(peer: String) = sessions[peer]
     override suspend fun saveSessions(peer: String, sessions: SessionSet) { this.sessions[peer] = sessions }
     override suspend fun ownSenderKey(group: String) = own[group]
@@ -39,6 +43,8 @@ class InMemoryStore(private val name: String) : EngineStore {
     override suspend fun saveGroup(group: Group) { groups[group.id] = group }
     override suspend fun conversation(id: String) = conversations[id]
     override suspend fun saveConversation(conversation: Conversation) { conversations[conversation.id] = conversation }
+    override suspend fun deleteConversation(id: String) { conversations.remove(id) }
+    override suspend fun moveMessages(from: String, to: String) { messages.replaceAll { _, m -> if (m.convId == from) m.copy(convId = to) else m } }
     override suspend fun message(id: String) = messages[id]
     override suspend fun saveMessage(message: ChatMessage) { messages[message.id] = message }
     override suspend fun deleteMessage(id: String) { messages.remove(id) }
