@@ -37,7 +37,10 @@ import java.io.File
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(application = Application::class, sdk = [34], qualifiers = "w411dp-h891dp-xxhdpi")
-class ScreensTest {
+open class ScreensTest {
+    /** Where the pictures go; the tablet runs below draw the same screens into their own folders. */
+    protected open val out = "build/screens"
+
     @get:Rule val rule = createAndroidComposeRule<ComponentActivity>()
 
     @Before fun setUp() = AppGraph.init(ApplicationProvider.getApplicationContext())
@@ -49,26 +52,28 @@ class ScreensTest {
         val view = rule.activity.window.decorView
         val bitmap = Bitmap.createBitmap(view.width, view.height, Bitmap.Config.ARGB_8888)
         rule.runOnUiThread { view.draw(android.graphics.Canvas(bitmap)) }
-        File("build/screens").apply { mkdirs() }.resolve("$name.png").outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        File(out).apply { mkdirs() }.resolve("$name.png").outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
     }
 
     private val light = Appearance(mode = Appearance.Mode.LIGHT)
     private val dark = Appearance(mode = Appearance.Mode.DARK)
 
-    private fun msg(id: String, mine: Boolean, text: String, status: MsgStatus = MsgStatus.READ, replyTo: String? = null, deleted: Boolean = false, kind: MsgKind = MsgKind.TEXT) =
-        ChatMessage(id, "c", if (mine) "me" else "asha", mine, kind, text, 1_000L, status, replyTo = replyTo, deleted = deleted)
+    private fun msg(id: String, mine: Boolean, text: String, status: MsgStatus = MsgStatus.READ, replyTo: String? = null, deleted: Boolean = false, kind: MsgKind = MsgKind.TEXT, from: String = "asha") =
+        ChatMessage(id, "c", if (mine) "me" else from, mine, kind, text, 1_000L, status, replyTo = replyTo, deleted = deleted)
 
     @Composable
     private fun Bubbles() {
-        val names = mapOf("asha" to "Asha")
-        val first = msg("1", false, "Are you at the station yet?")
+        val names = mapOf("asha" to "Asha", "ben" to "Ben")
+        val meet = msg("4", false, "Meet at the big tent at 9?")
         Column(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(12.dp)) {
-            Bubble(msg("0", false, "Asha joined the group", kind = MsgKind.SYSTEM), true, ConvKind.GROUP, names, null, {}, {})
-            Bubble(first, true, ConvKind.GROUP, names, null, {}, {})
-            Bubble(msg("2", true, "Two minutes away, save me a seat", replyTo = "1"), true, ConvKind.GROUP, names, first, {}, {})
-            Bubble(msg("3", true, "Sending…", status = MsgStatus.SENDING), false, ConvKind.GROUP, names, null, {}, {})
-            Bubble(msg("4", true, "Delivered", status = MsgStatus.DELIVERED), false, ConvKind.GROUP, names, null, {}, {})
-            Bubble(msg("5", false, "", deleted = true), true, ConvKind.GROUP, names, null, {}, {})
+            Bubble(msg("0", false, "Ben joined the group", kind = MsgKind.SYSTEM), true, ConvKind.GROUP, names, null, {}, {})
+            Bubble(msg("1", false, "Lost you near the main stage \uD83D\uDE05"), true, ConvKind.GROUP, names, null, {}, {})
+            Bubble(msg("2", true, "I'm by the food trucks, no signal at all"), true, ConvKind.GROUP, names, null, {}, {})
+            Bubble(msg("3", false, "Same, but this still gets through!", from = "ben"), true, ConvKind.GROUP, names, null, {}, {})
+            Bubble(meet, true, ConvKind.GROUP, names, null, {}, {})
+            Bubble(msg("5", true, "See you there \uD83D\uDC4D", replyTo = "4"), true, ConvKind.GROUP, names, meet, {}, {})
+            Bubble(msg("6", true, "Bringing snacks", status = MsgStatus.DELIVERED), false, ConvKind.GROUP, names, null, {}, {})
+            Bubble(msg("7", false, "Legend \uD83C\uDF89", from = "ben"), true, ConvKind.GROUP, names, null, {}, {})
         }
     }
 
