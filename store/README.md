@@ -16,4 +16,5 @@ own code (`ScreensTest`, which also renders the tablet sizes into `app/build/scr
 
 ## Videos
 
+- `videos/LibreChat FOREGROUND_SERVICE_CONNECTED_DEVICE.mp4`: the connected device foreground service declaration (the mesh service).
 - `videos/LibreChat promo.mp4`: the promo video for the store listing (Main store listing → Video), with original music. The people and chats in it are made up, drawn by the app's own screens from `PromoScreensTest`.
