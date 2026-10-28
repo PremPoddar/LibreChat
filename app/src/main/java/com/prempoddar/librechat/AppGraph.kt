@@ -18,7 +18,9 @@ object AppGraph {
     }
 
     val settings by lazy { SettingsRepository(app) }
-    val database by lazy { ChatDatabase.open(app) }
+    /** Tests set this to an in-memory database before anything reads [database]. */
+    internal var testDatabase: ChatDatabase? = null
+    val database by lazy { testDatabase ?: ChatDatabase.open(app) }
     val dao by lazy { database.dao() }
     val files by lazy { EncryptedFiles(app) }
     val store by lazy { RoomStore(dao) { settings.current().name.ifBlank { "LibreChat user" } } }
