@@ -9,8 +9,9 @@
 [![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?logo=jetpackcompose&logoColor=white)](https://developer.android.com/compose)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue)](LICENSE)
 [![Website](https://img.shields.io/badge/Website-prempoddar.github.io%2FLibreChat-4BE08E)](https://prempoddar.github.io/LibreChat/)
+[![Latest release](https://img.shields.io/github/v/release/PremPoddar/LibreChat?label=Download&logo=android&logoColor=white&color=4BE08E)](https://github.com/PremPoddar/LibreChat/releases/latest)
 
-**[Website](https://prempoddar.github.io/LibreChat/)** · **[Download](https://github.com/PremPoddar/LibreChat/releases)** · **[Privacy](https://prempoddar.github.io/LibreChat/privacy/)** · **[Report a problem](https://github.com/PremPoddar/LibreChat/issues)**
+**[Website](https://prempoddar.github.io/LibreChat/)** · **[Download APK](https://github.com/PremPoddar/LibreChat/releases/latest)** · **[Privacy](https://prempoddar.github.io/LibreChat/privacy/)** · **[Report a problem](https://github.com/PremPoddar/LibreChat/issues)**
 
 </div>
 
