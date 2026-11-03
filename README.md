@@ -40,7 +40,7 @@ end encrypted.
 | ✅ **Verification** | Scan each other's QR code or compare a 60-digit safety number. |
 | ✋ **Requests &amp; blocking** | Strangers land in Requests; blocked people are dropped (but still relayed for others). |
 | 🛰️ **Nearby radar** | Who's in range, who's reachable through the mesh, and how strong the link is. |
-| 🔐 **On the phone** | SQLCipher database and encrypted media, keys guarded by Android Keystore; app lock; encrypted backups. |
+| 🔐 **On the phone** | SQLCipher database and encrypted media, keys guarded by Android Keystore; app lock; a Calculator disguise for the home screen; encrypted backups. |
 
 ## 🧭 How it works
 

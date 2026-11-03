@@ -23,6 +23,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Block
+import androidx.compose.material.icons.rounded.Calculate
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Info
@@ -127,6 +128,15 @@ fun YouTab(onBlocked: () -> Unit, onSecurity: () -> Unit, onAppearance: () -> Un
                 "App lock", if (canLock) "Fingerprint, face or screen lock to open LibreChat" else "Set a screen lock on this phone first",
                 Icons.Rounded.Lock, settings.appLock, enabled = canLock,
             ) { on -> update { it.copy(appLock = on) } }
+            var disguised by remember { mutableStateOf(com.prempoddar.librechat.android.Disguise.on(context)) }
+            SwitchRow(
+                "Disguise as Calculator", "Show LibreChat on your home screen as Calculator, with a calculator icon",
+                Icons.Rounded.Calculate, disguised,
+            ) { on ->
+                com.prempoddar.librechat.android.Disguise.set(context, on)
+                disguised = on
+                Toast.makeText(context, if (on) "Your home screen will show Calculator in a few seconds" else "LibreChat's own icon is coming back", Toast.LENGTH_LONG).show()
+            }
             var timerMenu by remember { mutableStateOf(false) }
             Box(Modifier.fillMaxWidth()) {
                 SettingsRow("Disappearing messages", "${ConvTimers.label(settings.defaultTimer)} for new chats you start", Icons.Rounded.Timer, onClick = { timerMenu = true }) { Chevron() }

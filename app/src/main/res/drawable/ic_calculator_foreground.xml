@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A plain calculator: a display and a 4×4 keypad with an orange equals key, inside the safe zone. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path android:fillColor="#E8EAED" android:pathData="M38,30h32a4,4 0,0 1,4 4v40a4,4 0,0 1,-4 4h-32a4,4 0,0 1,-4 -4v-40a4,4 0,0 1,4 -4z" />
+    <path android:fillColor="#2B2F36" android:pathData="M39,35h30v9h-30z" />
+    <path android:fillColor="#9AA0A6" android:pathData="M39,48h6v5h-6zM47,48h6v5h-6zM55,48h6v5h-6zM39,55.5h6v5h-6zM47,55.5h6v5h-6zM55,55.5h6v5h-6zM39,63h6v5h-6zM47,63h6v5h-6zM55,63h6v5h-6zM39,70.5h14v4h-14zM55,70.5h6v4h-6z" />
+    <path android:fillColor="#F29C38" android:pathData="M63,48h6v5h-6zM63,55.5h6v5h-6zM63,63h6v11.5h-6z" />
+</vector>
