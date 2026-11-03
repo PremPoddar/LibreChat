@@ -1,0 +1,15 @@
+<p><b>An off-grid messenger. No internet, no servers, no accounts.</b></p>
+<p>At a festival, on a hike, in a building with no signal or during an outage: open LibreChat and everyone nearby running it forms a mesh. A message to someone out of range is carried by the phones in between, and if there's no path right now, they hold it for up to a day and pass it on when one appears. Everything private is end to end encrypted.</p>
+<ul>
+<li><b>Public chat</b> with everyone in range, signed so nobody can post as you.</li>
+<li><b>Direct messages</b> encrypted end to end with forward secrecy (X3DH and Double Ratchet).</li>
+<li><b>Groups</b> encrypted with Sender Keys; keys rotate when someone leaves.</li>
+<li><b>Photos and voice notes</b>, compressed for the mesh and sped up over Wi-Fi Aware when phones are side by side.</li>
+<li><b>Receipts:</b> sent, delivered across the mesh, and read.</li>
+<li><b>Replies, reactions</b> and delete for everyone.</li>
+<li><b>Disappearing messages:</b> 1 hour, 1 day or 1 week.</li>
+<li><b>Verification</b> by QR code or a 60-digit safety number.</li>
+<li><b>Requests and blocking</b> for strangers.</li>
+<li><b>Nearby radar:</b> who's in range and who's reachable through the mesh.</li>
+<li><b>On the phone:</b> encrypted database and media, keys in Android Keystore, app lock, a Calculator disguise for the home screen, and encrypted backups.</li>
+</ul>

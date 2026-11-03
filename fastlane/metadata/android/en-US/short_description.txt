@@ -1,0 +1,1 @@
+Off-grid encrypted messenger over a Bluetooth and Wi-Fi mesh. No internet needed

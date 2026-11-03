@@ -1,0 +1,1 @@
+• Disguise as Calculator: in Privacy settings, LibreChat can show on your home screen as "Calculator" with a calculator icon. Turn it off to bring LibreChat's own icon back.
