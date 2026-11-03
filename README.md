@@ -11,7 +11,7 @@
 [![Website](https://img.shields.io/badge/Website-prempoddar.github.io%2FLibreChat-4BE08E)](https://prempoddar.github.io/LibreChat/)
 [![Latest release](https://img.shields.io/github/v/release/PremPoddar/LibreChat?label=Download&logo=android&logoColor=white&color=4BE08E)](https://github.com/PremPoddar/LibreChat/releases/latest)
 
-**[Website](https://prempoddar.github.io/LibreChat/)** · **[Download APK](https://github.com/PremPoddar/LibreChat/releases/latest)** · **[Privacy](https://prempoddar.github.io/LibreChat/privacy/)** · **[Report a problem](https://github.com/PremPoddar/LibreChat/issues)**
+**[Website](https://prempoddar.github.io/LibreChat/)** · **[Download APK](https://github.com/PremPoddar/LibreChat/releases/latest)** · **[F-Droid repo](https://prempoddar.github.io/fdroid/repo?fingerprint=B22CDB8846EA991100C5D8DD2CBB893AF2C51B72406210B94B9F8C9B539E8BF6)** · **[Privacy](https://prempoddar.github.io/LibreChat/privacy/)** · **[Report a problem](https://github.com/PremPoddar/LibreChat/issues)**
 
 </div>
 
