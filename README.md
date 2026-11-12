@@ -8,10 +8,10 @@
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.1-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org)
 [![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?logo=jetpackcompose&logoColor=white)](https://developer.android.com/compose)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue)](LICENSE)
-[![Website](https://img.shields.io/badge/Website-prempoddar.github.io%2FLibreChat-4BE08E)](https://prempoddar.github.io/LibreChat/)
+[![Website](https://img.shields.io/badge/Website-prempoddar.is-a.dev%2FLibreChat-4BE08E)](https://prempoddar.is-a.dev/LibreChat/)
 [![Latest release](https://img.shields.io/github/v/release/PremPoddar/LibreChat?label=Download&logo=android&logoColor=white&color=4BE08E)](https://github.com/PremPoddar/LibreChat/releases/latest)
 
-**[Website](https://prempoddar.github.io/LibreChat/)** · **[Download APK](https://github.com/PremPoddar/LibreChat/releases/latest)** · **[F-Droid repo](https://prempoddar.github.io/fdroid/repo?fingerprint=B22CDB8846EA991100C5D8DD2CBB893AF2C51B72406210B94B9F8C9B539E8BF6)** · **[Privacy](https://prempoddar.github.io/LibreChat/privacy/)** · **[Report a problem](https://github.com/PremPoddar/LibreChat/issues)**
+**[Website](https://prempoddar.is-a.dev/LibreChat/)** · **[Download APK](https://github.com/PremPoddar/LibreChat/releases/latest)** · **[F-Droid repo](https://prempoddar.is-a.dev/fdroid/repo?fingerprint=B22CDB8846EA991100C5D8DD2CBB893AF2C51B72406210B94B9F8C9B539E8BF6)** · **[Privacy](https://prempoddar.is-a.dev/LibreChat/privacy/)** · **[Report a problem](https://github.com/PremPoddar/LibreChat/issues)**
 
 </div>
 
@@ -101,7 +101,7 @@ What relays can see: the sender and recipient mesh ids (or the group id), sizes 
 | Microphone, camera | Voice notes and scanning QR codes, asked for when first used. |
 | Internet | Only for the local sockets of Wi-Fi Aware links. LibreChat never contacts a server. |
 
-Full policy: **[prempoddar.github.io/LibreChat/privacy](https://prempoddar.github.io/LibreChat/privacy/)**.
+Full policy: **[prempoddar.is-a.dev/LibreChat/privacy](https://prempoddar.is-a.dev/LibreChat/privacy/)**.
 
 ## 🛠️ Building and testing
 
